@@ -200,6 +200,31 @@ The optional argument names the handoff; anything after it is passed on as a not
 
 ---
 
+## Rules
+
+Every rule is a `rule-<name>` skill. You don't run them as commands: the skills above use them, the `rules` index tells Claude which one applies when, and you can steer with their names ("apply rule-verify-the-real-thing", "question the assumption"). Each rule file is read only when it applies.
+
+**Domain rules** also load on their own when Claude edits matching files, and `/build` reads the relevant ones before writing code. Each rule is one line with an exact value and its reason, and each file ends with a "Done checklist" that `/build` verifies. Your project's `CLAUDE.md` wins wherever they disagree.
+
+| Rule | Loads when editing | Covers |
+| --- | --- | --- |
+| `rule-frontend` | `.tsx/.jsx/.vue/.svelte/.css`, `components/`, `pages/` … | reuse, loading/empty/error states, accessibility, responsive widths, forms |
+| `rule-backend` | `server/`, `services/`, `jobs/`, `workers/` … | input validation at the edge, timeouts and retries, idempotent jobs, secrets, logging, errors |
+| `rule-db` | `migrations/`, `*.sql`, `schema.prisma`, `models/` … | safe migrations, schema constraints, no N+1, transactions, destructive changes |
+| `rule-api-design` | `routes/`, `api/`, `controllers/`, `handlers/` … | naming, status codes, one error shape, cursor pagination, breaking changes |
+
+**Working rules** are 21 short rules about how to work, each `rule-<name>`:
+
+| Group | Rules |
+| --- | --- |
+| Verifying and debugging | verify-the-real-thing · fix-at-the-source · question-the-assumption · test-what-users-see · small-green-steps · criteria-before-code · bounded-loops |
+| Code and design | smallest-change · delete-first · easy-to-follow · validate-at-the-edges · design-it-in · script-repeated-work · enforce-dont-remind |
+| Agents and workflow | no-shared-writes · keep-context-lean · decide-and-report · ask-with-context · state-lives-in-files · spend-review-where-mistakes-are-expensive · plan-strong-execute-cheap |
+
+**Credits:** 15 of the working rules adapt ideas from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan (MIT License), rewritten and renamed for simply: verify-the-real-thing, fix-at-the-source, question-the-assumption, test-what-users-see, small-green-steps, smallest-change, delete-first, easy-to-follow, validate-at-the-edges, design-it-in, script-repeated-work, enforce-dont-remind, no-shared-writes, keep-context-lean, decide-and-report. The skill layout and the brief/worker pattern are also inspired by pstack.
+
+---
+
 ## For maintainers
 
 Every checker script has a self-test:

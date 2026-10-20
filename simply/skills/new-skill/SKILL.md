@@ -9,6 +9,8 @@ disable-model-invocation: true
 
 Draft a new skill in `simply/skills/<name>/` from `$ARGUMENTS`. If `$ARGUMENTS` is empty, use the workflow from the current conversation. `/simply:build` is the reference example of the house style; read it before writing.
 
+**Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
+
 ## Step 1. Pin down the job
 
 Work out four things: the task the skill performs, what it hands back, what it must never do, and whether another skill reads its output. If any is unclear after reading the conversation, ask once with all questions together, then wait.
@@ -37,7 +39,8 @@ List `simply/skills/`. If an existing skill already covers the job, say which on
 - Exact values, not judgment: "5 max", `model: "sonnet"`, `effort: "medium"`, not "a few" or "a cheaper model". Spawning agents uses exact Agent tool values (`subagent_type`, `model`, `effort`, `isolation`) in a table.
 - Point at other skills' files with `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/...`, never a relative `../` path.
 - If another skill reads this skill's output, define the format once in `references/<name>-format.md` with a filled-in example, and add `scripts/check_<name>.py` that validates it, with a `--selftest` that checks the example. Both skills run the script.
-- Deterministic work (parsing, validating, comparing state) goes in `scripts/`, not in prose the model re-derives each run. Every script gets a `--selftest`.
+- Deterministic work (parsing, validating, comparing state) goes in `scripts/`, not in prose the model re-derives each run. Every script gets a `--selftest` (rule: `rule-script-repeated-work`).
+- Cite the rule a step applies as (rule: `rule-x`) at that step, and include the **Rules** line from `/simply:build` under the title. Pick rules from `${CLAUDE_PLUGIN_ROOT}/skills/rules/SKILL.md`.
 - Write only what Claude would not already know. Keep the body under 200 lines; move long material to `references/`, linked directly from SKILL.md.
 
 ## Step 4. Check

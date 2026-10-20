@@ -7,7 +7,9 @@ disable-model-invocation: true
 
 # Give
 
-Turn the current task into one handoff file a cold agent can pick up and continue exactly where this conversation stopped.
+Turn the current task into one handoff file a cold agent can pick up and continue exactly where this conversation stopped. (rule: `rule-state-lives-in-files`)
+
+**Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
 
 The format is the contract with `/simply:take`: follow [references/handoff-format.md](references/handoff-format.md) exactly, every heading, in order.
 
@@ -43,7 +45,7 @@ If not in a git repo, use the current directory as root and write `Branch: none 
 
 Fill each section from the conversation and the repo, not memory:
 - Done so far: only items with a real check in this conversation. Name the command and its result. Anything unchecked moves to In progress.
-- Exact next step: one action, with file, symbol, and command. If you cannot name it, the task is not ready; ask the user what comes next.
+- Exact next step: one action, with file, symbol, and command. If you cannot name it, the task is not ready; ask the user what comes next (rule: `rule-ask-with-context`).
 - Dead ends: every approach tried and abandoned, with the reason or error text. This is the section a fresh agent most needs.
 - Files involved: run `git diff --name-only HEAD` plus untracked files, and add files that were read for context.
 

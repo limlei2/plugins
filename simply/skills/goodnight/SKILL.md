@@ -6,7 +6,9 @@ disable-model-invocation: true
 
 # Goodnight
 
-Write today's daily log so a fresh session tomorrow can resume without asking anything. The log format is fixed in [daily-log-format.md](references/daily-log-format.md). Read it first and follow it exactly; `/simply:goodmorning` parses it.
+Write today's daily log so a fresh session tomorrow can resume without asking anything. (rule: `rule-state-lives-in-files`)
+
+**Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule. The log format is fixed in [daily-log-format.md](references/daily-log-format.md). Read it first and follow it exactly; `/simply:goodmorning` parses it.
 
 ## Step 1. Locate the log
 
@@ -52,9 +54,9 @@ For each item, use what the commands and conversation show. Do not invent.
 - **In progress `next`**: precise enough to act on cold, naming the file, function, command, or failing test. "Continue work" is not a next step. If you cannot name one, ask the user.
 - **Uncommitted changes** from `git status` on a branch go under In progress with that branch, and `next` says to commit or finish them.
 - **Tomorrow**: 5 items max, ranked by these rules in order: (1) items that unblock someone else, (2) In progress items with the fewest remaining steps, (3) everything else in the order the user mentioned them.
-- **Skill notes**: 5 max, only incidents from this session: the user corrected the agent, a skill step was skipped or wrong, or the same instruction was repeated. Each names the skill, what happened, and the suggested change. Never edit the skill.
+- **Skill notes**: 5 max, only incidents from this session: the user corrected the agent, a skill step was skipped or wrong, or the same instruction was repeated. Each names the skill, what happened, and the suggested change. A correction made twice should be suggested as a check or script, not more text (rule: `rule-enforce-dont-remind`). Never edit the skill.
 
-If an In progress item has no `next` or a Blocked item has no `unblocks`, ask the user once, listing all gaps together, then wait. If the user doesn't supply one, write `next: missing` or `unblocks: missing`; never invent one.
+If an In progress item has no `next` or a Blocked item has no `unblocks`, ask the user once, listing all gaps together, then wait (rule: `rule-ask-with-context`). If the user doesn't supply one, write `next: missing` or `unblocks: missing`; never invent one.
 
 ## Step 4. Write the log
 

@@ -9,6 +9,8 @@ disable-model-invocation: true
 
 Answer one question with findings a reader can check: every fact has a source, every guess is labeled as one.
 
+**Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
+
 ## Modes
 
 - **Standalone**: the user ran `/simply:research <question>`. Start at Step 1. End with a recommendation.
@@ -44,7 +46,7 @@ For each criterion, go to the most authoritative source first:
 3. Package registries for versions and size (npm, PyPI, bundlephobia).
 4. Independent articles and discussions, only for experience and sentiment, never as the sole source for a fact.
 
-Record for each fact: the claim, the source URL, and the date or version it applies to.
+Record for each fact: the claim, the source URL, and the date or version it applies to. Keep only those records, never pasted page contents (rule: `rule-keep-context-lean`).
 
 ## Step 3. Verify
 

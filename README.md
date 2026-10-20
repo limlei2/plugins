@@ -20,6 +20,7 @@ Full usage guide: **[simply/README.md](simply/README.md)**.
 | `/simply:take` | Resumes a handoff after verifying the repo matches it |
 | `/simply:research` | One question researched online, sourced, with one recommendation |
 | `/simply:new-skill` | Drafts a new skill in the house style |
+| `rules` + 25 `rule-*` | Domain rules (frontend, backend, db, api-design) and 21 working rules; see the guide |
 
 The skills write their state to `.simply/` in each project (`daily/`, `handoffs/`, `factory/`). Commit it to share logs and handoffs across machines, or add `.simply/` to the project's `.gitignore` to keep them local.
 
@@ -58,3 +59,7 @@ for t in simply/skills/*/scripts/*.py; do python3 "$t" --selftest; done
 
 - Skill: run `/simply:new-skill <what it should do>`.
 - Plugin: add `<plugin>/.claude-plugin/plugin.json` and `<plugin>/skills/`, then add an entry to `.claude-plugin/marketplace.json`.
+
+## Credits
+
+Parts of `simply` adapt ideas from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan (MIT License). See [simply/README.md](simply/README.md#rules).

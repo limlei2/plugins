@@ -9,10 +9,12 @@ disable-model-invocation: true
 
 Turn one task into one verified PR, or into a precise escalation.
 
+**Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
+
 ## Modes
 
 - **Standalone**: the user ran `/simply:build <task>`. Start at Step 1.
-- **Given a brief**: you received a brief (you are a `/simply:factory` worker). Skip Step 1. Execute the brief exactly: don't re-scope, don't add criteria, don't reinterpret the goal. Never ask the user in this mode.
+- **Given a brief**: you received a brief (you are a `/simply:factory` worker). Skip Step 1. Execute the brief exactly: don't re-scope, don't add criteria, don't reinterpret the goal. Never ask the user in this mode: decide, record the assumption, keep going (rule: `rule-decide-and-report`).
 
 ## Limits
 
@@ -29,7 +31,7 @@ Over the diff limit, the task is too big for one PR. Escalate with a proposed sp
 
 ## Step 1. Write the brief (standalone only)
 
-Write a brief from `$ARGUMENTS` in the format in [references/brief.md](references/brief.md). Read the files the task names and the files they import first so Files and Checks are real paths and real commands. Show the brief to the user in your reply, then continue without waiting.
+Write the criteria before any code (rule: `rule-criteria-before-code`). Write a brief from `$ARGUMENTS` in the format in [references/brief.md](references/brief.md). Read the files the task names and the files they import first so Files and Checks are real paths and real commands. Show the brief to the user in your reply, then continue without waiting (rule: `rule-decide-and-report`).
 
 Ask the user (once, all questions in one message, then wait) only when you cannot write one of these from the request and the code:
 - a Goal that is one sentence,
@@ -71,30 +73,36 @@ BASE=$(git merge-base HEAD "origin/$DEFAULT")
 
 ## Step 4. Implement
 
-Before writing code, read the rules for the layer you touch and follow them. If a rules file doesn't exist yet, skip it and add `rules: <name> missing` to the PR's Assumptions.
+Before writing code, read the rules for the layer you touch and follow them.
 
 | Touching | Read |
 | --- | --- |
-| UI components, styles, pages | `${CLAUDE_PLUGIN_ROOT}/skills/frontend-rules/SKILL.md` |
-| Server logic, services, jobs | `${CLAUDE_PLUGIN_ROOT}/skills/backend-rules/SKILL.md` |
-| Schema, migrations, queries | `${CLAUDE_PLUGIN_ROOT}/skills/db-rules/SKILL.md` |
-| Endpoints, request/response shapes | `${CLAUDE_PLUGIN_ROOT}/skills/api-design-rules/SKILL.md` |
+| UI components, styles, pages | `${CLAUDE_PLUGIN_ROOT}/skills/rule-frontend/SKILL.md` |
+| Server logic, services, jobs | `${CLAUDE_PLUGIN_ROOT}/skills/rule-backend/SKILL.md` |
+| Schema, migrations, queries | `${CLAUDE_PLUGIN_ROOT}/skills/rule-db/SKILL.md` |
+| Endpoints, request/response shapes | `${CLAUDE_PLUGIN_ROOT}/skills/rule-api-design/SKILL.md` |
 
-Make the smallest change that meets every criterion (principle: `principle-laziness-protocol`). Stay inside the brief's "Work in" files; never edit "Do not touch". If a criterion truly needs a file outside the list, that is a wrong brief: escalate.
+Before writing code:
+- Remove dead code and redundant layers the change would build on (rule: `rule-delete-first`).
+- If the requirement doesn't fit the current design, reshape the design rather than bolting it on (rule: `rule-design-it-in`).
+- Validate untrusted input once, at the boundary; trust internal types after (rule: `rule-validate-at-the-edges`).
+- Tests assert what callers or users can observe, not internals (rule: `rule-test-what-users-see`).
 
-Commit after each working unit, each leaving the checks green. Message: `<type>(<scope>): <subject>`, same rules as the PR title in Step 7.
+Make the smallest change that meets every criterion (rule: `rule-smallest-change`). Stay inside the brief's "Work in" files; never edit "Do not touch". If a criterion truly needs a file outside the list, that is a wrong brief: escalate.
+
+Commit after each working unit, each leaving the checks green (rule: `rule-small-green-steps`). Message: `<type>(<scope>): <subject>`, same rules as the PR title in Step 7.
 
 ## Step 5. Verify
 
 1. Run every command in Checks. Each must pass.
-2. Check each criterion against the real artifact and record the evidence: command plus result, or file and line (principle: `principle-prove-it-works`). Verify on the surface the user meets:
+2. Check each criterion against the real artifact and record the evidence: command plus result, or file and line (rule: `rule-verify-the-real-thing`). Verify on the surface the user meets:
    - UI change: start the project's dev server (the `dev` script in `package.json`, or the command in `CLAUDE.md`) on the port named in the brief's Constraints (`PORT=<n>`, or `--port <n>` for Vite), else the default port, open the page in the built-in browser (`mcp__Claude_Browser__*`), and check the default, empty, loading, and error states. Evidence: the URL and what you saw in each state.
    - API change: call the endpoint (`curl`) and read the real response.
    - Data change: query the result, don't trust the migration's exit code.
    - CLI or script: run it with real arguments.
 3. "Inconclusive", "should work", a check on a different surface, or a green suite that never exercises the criterion is not a pass. Treat it as a failure.
 
-When a check fails, find the first place the system went wrong and fix it there, not where the symptom showed (principle: `principle-fix-root-causes`). Re-run all checks after every fix.
+When a check fails, find the first place the system went wrong and fix it there, not where the symptom showed (rule: `rule-fix-at-the-source`). Re-run all checks after every fix.
 
 ## Step 6. Self-review
 
@@ -104,10 +112,11 @@ Read `git diff $BASE...HEAD` as a reviewer would:
 - Changes outside the brief's scope.
 - Debug leftovers: `console.log`, `print`, commented-out code, TODOs you added, temp files.
 - Comments that narrate what the code does. Keep only comments that explain a non-obvious why.
+- Layers a reader must trace: one-caller wrappers, needless indirection, mutable state with wide scope (rule: `rule-easy-to-follow`).
 
 Fix what you find, then repeat Step 5.
 
-At most 2 review-fix rounds. If the same premise fails twice (the same check, the same criterion), stop: write down the assumption both fixes shared and say it in the escalation (principle: `principle-attack-the-premise`). Don't try a third fix on it.
+At most 2 review-fix rounds (rule: `rule-bounded-loops`). If the same premise fails twice (the same check, the same criterion), stop: write down the assumption both fixes shared and say it in the escalation (rule: `rule-question-the-assumption`). Don't try a third fix on it.
 
 ## Step 7. Ship or escalate
 
@@ -130,7 +139,7 @@ gh pr create --title "<type>(<scope>): <subject>" --body-file <body.md>
 - `## Verification`: a table `criterion | evidence`, one row per criterion.
 - `## Assumptions`: every literal reading from Step 2, or "none".
 
-**Escalate** when the brief is wrong or any **Limits** value is hit. Commit and push any partial work to the branch, open no PR, and report:
+**Escalate** when the brief is wrong or any **Limits** value is hit. Commit and push any partial work to the branch, open no PR, and report (rule: `rule-ask-with-context`):
 - Unresolved: which criterion or check, with the exact failure.
 - Tried: each attempt, one line each.
 - Question: one specific question whose answer unblocks the task.

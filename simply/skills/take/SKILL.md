@@ -7,7 +7,9 @@ disable-model-invocation: true
 
 # Take
 
-Continue a task from a `/simply:give` handoff with no loss of context, after proving the code in front of you is the code the handoff describes.
+Continue a task from a `/simply:give` handoff with no loss of context, after proving the code in front of you is the code the handoff describes. (rule: `rule-state-lives-in-files`)
+
+**Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
 
 The format is defined once in [handoff-format.md](${CLAUDE_PLUGIN_ROOT}/skills/give/references/handoff-format.md). Read it before parsing.
 
@@ -40,7 +42,7 @@ python3 ${CLAUDE_PLUGIN_ROOT}/skills/take/scripts/verify_state.py <handoff>
 
 - Exit `0`: everything matches. Go to Step 3.
 - Exit `2` (`NEEDS_APPLY`): the tree is clean and the giver's uncommitted work is in the recorded stash. Run the `git stash apply --index <sha>` it prints, then re-run the verifier; it must exit `0`.
-- Exit `1`: mismatch. Show the user the table it printed, which includes the fix for each failed check, and stop. Do not run any fix yourself, edit the handoff, or touch code.
+- Exit `1`: mismatch. Show the user the table it printed, which includes the fix for each failed check, and stop (rule: `rule-ask-with-context`). Do not run any fix yourself, edit the handoff, or touch code.
 
 ## Step 3. Restate and claim
 

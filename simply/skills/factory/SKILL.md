@@ -7,7 +7,9 @@ disable-model-invocation: true
 
 # Factory
 
-Plan with a strong model, execute with cheap ones: you (the main agent) split and write briefs, workers execute them, you check and collect.
+Plan with a strong model, execute with cheap ones: you (the main agent) split and write briefs, workers execute them, you check and collect (rule: `rule-plan-strong-execute-cheap`, `rule-spend-review-where-mistakes-are-expensive`).
+
+**Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
 
 Mode is the first word of `$ARGUMENTS`: `research` selects research mode; `build` or anything else selects build mode (the default). The rest is the request.
 
@@ -44,11 +46,11 @@ Classify each build task by the first rule that matches:
 
 ## Step 1. Plan
 
-Read the files the request names and the files they import, plus the project's `CLAUDE.md` and package manifest. Read nothing else unless a task's files are still unknown. Then write this planning checkpoint in your reply, all four items, each answered (write `n/a: <reason>` rather than dropping one):
+Read the files the request names and the files they import, plus the project's `CLAUDE.md` and package manifest. Read nothing else unless a task's files are still unknown, and keep raw file contents out of your reply: summarize (rule: `rule-keep-context-lean`). Then write this planning checkpoint in your reply, all four items, each answered (write `n/a: <reason>` rather than dropping one):
 
 1. **Blocking first steps.** Work every task depends on (a schema change, a shared type, a new package). If there is one, this run dispatches **only** that step as a single build worker (an exception to the 2-worker minimum), reports it, and stops. The user re-runs `/simply:factory` after it merges.
 2. **Independent workstreams.** Tasks that share no files, don't depend on each other's result, and needn't land together.
-3. **Shared state.** Anything two tasks would both write (a file, a config, a lockfile, a route table). Split it so each task owns its part; if it can't be split, merge those tasks or sequence them.
+3. **Shared state** (rule: `rule-no-shared-writes`). Anything two tasks would both write (a file, a config, a lockfile, a route table). Split it so each task owns its part; if it can't be split, merge those tasks or sequence them.
 4. **Smallest decomposition.** Why this many tasks and not fewer. If only one task remains, stop and tell the user to run `/simply:build`.
 
 A task with more than 7 criteria is too big: split it, or cut criteria that restate another.
@@ -91,7 +93,7 @@ Use these prompts verbatim, then append the full brief:
 
 ## Step 5. Check each result yourself
 
-Wait for every worker. A worker's report is a claim, not evidence. For each build task:
+Wait for every worker. A worker's report is a claim, not evidence (rule: `rule-verify-the-real-thing`). For each build task:
 1. Read the PR diff (`gh pr diff <n>`) against its brief: every criterion addressed, nothing outside "Work in", no debug leftovers.
 2. Read the PR's Verification table. A criterion without real evidence counts as unmet.
 3. Write your own one-line verdict per task: `ok`, or what is wrong.
@@ -102,7 +104,7 @@ For research tasks, spot-check the source URL behind each finding that drives th
 
 For a task that failed your check or escalated with a question you can answer from the request or the code:
 - Spawn a **fresh** worker (never resume the old one; resumed agents silently drop instructions) with the same Agent values as the original. Its prompt carries the original brief, a `## Fix` section stating exactly what to change, and the previous worker's report and branch.
-- One retry per task, no more. If the retry fails too, or the question needs a decision only the user can make, relay it to the user verbatim with what was tried.
+- One retry per task, no more (rule: `rule-bounded-loops`). If the retry fails too, or the question needs a decision only the user can make, relay it to the user verbatim with what was tried (rule: `rule-ask-with-context`).
 - A question that needs a product or preference decision (naming, UX, scope) always goes to the user. Never retry it.
 
 Build mode, cross-PR review: run it when 3 or more PRs opened; skip it otherwise. Spawn ONE reviewer with the **Models** values. Prompt it to read every PR diff in one pass (`gh pr diff <n>`) and report only conflicts between PRs and cross-cutting mistakes (duplicated helpers, inconsistent naming, a contract one PR changes and another relies on), at most 10 findings, each with PR number, file, and line. It reports; it does not edit.

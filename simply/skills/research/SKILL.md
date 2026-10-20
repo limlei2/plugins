@@ -1,6 +1,6 @@
 ---
 name: research
-description: "Researches one question online in depth and returns sourced findings with facts kept separate from inference. Use for '/simply:research', 'research X', 'look into X', 'compare options for X', 'what are the choices for X', or when a /simply:factory research worker is handed a brief. One agent, one question; never spawns subagents and never edits files. For several angles at once, use /simply:factory research."
+description: "Researches one question online and returns sourced findings with one recommendation. For several angles at once use /simply:factory research."
 argument-hint: "<question, or a brief in build/references/brief.md format>"
 disable-model-invocation: true
 ---
@@ -18,20 +18,20 @@ Answer one question with findings a reader can check: every fact has a source, e
 
 Hard limits. When one is hit, stop gathering and write the Output with what you have; mark unanswered criteria `unknown`.
 
-| Limit | Given a brief | Standalone |
-| --- | --- | --- |
-| Criteria | 7 max | 7 max |
-| Web searches + page fetches, total | 15 | 25 |
-| Searches per criterion before marking it `unknown` | 3 | 3 |
-| Options compared | the brief's one angle | 4 max |
-| Clarifying questions | none | 1 message, before any searching |
+| Limit | Given a brief | Standalone | Why |
+| --- | --- | --- | --- |
+| Criteria | 7 max | 7 max for one option; 5 max per option when comparing 2–4 | Keeps the comparison table readable and the fetch budget enough to source every cell. |
+| Web searches + page fetches, total | 15 | 40 | Research has no natural end; a budget forces the most authoritative sources first. |
+| Searches per criterion before marking it `unknown` | 3 | 3 | If 3 targeted searches find nothing, the fact is hard to find, and "unknown" is a more honest answer than a guess. |
+| Options compared | the brief's one angle | 4 max | Beyond 4, the choice isn't narrowed enough to decide; a fifth option rarely changes the pick. |
+| Clarifying questions | none | 1 message, before any searching | Questions mid-research waste the searches already done. |
 
 ## Step 1. Frame (standalone only)
 
 Write a brief in the format in [${CLAUDE_PLUGIN_ROOT}/skills/build/references/brief.md](${CLAUDE_PLUGIN_ROOT}/skills/build/references/brief.md), adapted for research:
 - **Goal**: the question, one sentence.
 - **Criteria**: the facts the answer needs, each a checkable question ("Does it support SSR?", "Last release date?", "Bundle size of the button component?").
-- **Files**: `read-only`. **Checks**: `none`.
+- **Files**: the single line `- Work in: read-only`. **Checks**: `- none`.
 - **Constraints**: the project's stack and limits that matter (read the repo's package files and CLAUDE.md for these), and source preferences.
 
 Show the brief in your reply, then continue without waiting. Ask the user (once, all questions in one message, then wait) only when you cannot write a one-sentence Goal or at least one criterion from the request. If the question implies more than 4 options, pick the 4 with the most GitHub stars or the most usage in the project's ecosystem, and say which you dropped.

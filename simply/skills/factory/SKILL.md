@@ -1,6 +1,6 @@
 ---
 name: factory
-description: "Splits a request into independent tasks, writes one brief per task, runs a /simply:build worker per task in parallel worktrees, and collects the PRs into one report. Research mode fans out read-only workers, one angle each, and combines them into one comparison and recommendation. Use for '/simply:factory', 'factory this', 'split this into parallel PRs', 'fan out the work', or '/simply:factory research <question>'. For a single task, use /simply:build."
+description: "Splits a request into 2-5 independent tasks and runs a /simply:build worker on each in parallel (or /simply:research workers with `research`), then checks every result itself. For one task use /simply:build."
 argument-hint: "[build|research] <request>"
 disable-model-invocation: true
 ---
@@ -15,13 +15,13 @@ Mode is the first word of `$ARGUMENTS`: `research` selects research mode; `build
 
 These are hard limits. Never exceed them, even if the user's request implies more.
 
-| Limit | Build mode | Research mode |
-| --- | --- | --- |
-| Workers per run | 2 min, 5 max | 2 min, 6 max |
-| Criteria per brief | 7 max | 7 max |
-| Retries per task | 1 | 1 |
-| Cross-PR reviewers | 1, only when 3+ PRs opened | none |
-| Total agents per run (workers + retries + reviewer) | 11 max | 12 max |
+| Limit | Build mode | Research mode | Why |
+| --- | --- | --- | --- |
+| Workers per run | 2 min, 5 max | 2 min, 6 max | One task doesn't need factory's overhead. More than 5 PRs at once is more than you can review in one sitting, and more agents mean more merge conflicts. |
+| Criteria per brief | 7 max | 7 max | A bigger brief is two tasks; cheap workers lose track of long criteria lists. |
+| Retries per task | 1 | 1 | If a fresh worker with an exact fix still fails, the brief or the plan is wrong, and that needs you, not more tokens. |
+| Cross-PR reviewers | 1, only when 3+ PRs opened | none | With 1–2 PRs the main agent's own diff check (Step 5) already covers conflicts. |
+| Total agents per run (workers + retries + reviewer) | 11 max | 12 max | Caps the cost of one run regardless of how the steps above play out. |
 
 Fewer than 2 tasks: stop and tell the user to run `/simply:build` (or `/simply:research`) instead. More than the max: dispatch the first batch only, list the rest as "Next run" in the Output, and stop after this run.
 
@@ -46,24 +46,25 @@ Classify each build task by the first rule that matches:
 
 Read the files the request names and the files they import, plus the project's `CLAUDE.md` and package manifest. Read nothing else unless a task's files are still unknown. Then write this planning checkpoint in your reply, all four items, each answered (write `n/a: <reason>` rather than dropping one):
 
-1. **Blocking first steps.** Work every task depends on (a schema change, a shared type, a new package). This runs first, alone, as its own `/simply:build`, and must merge before fan-out.
+1. **Blocking first steps.** Work every task depends on (a schema change, a shared type, a new package). If there is one, this run dispatches **only** that step as a single build worker (an exception to the 2-worker minimum), reports it, and stops. The user re-runs `/simply:factory` after it merges.
 2. **Independent workstreams.** Tasks that share no files, don't depend on each other's result, and needn't land together.
 3. **Shared state.** Anything two tasks would both write (a file, a config, a lockfile, a route table). Split it so each task owns its part; if it can't be split, merge those tasks or sequence them.
 4. **Smallest decomposition.** Why this many tasks and not fewer. If only one task remains, stop and tell the user to run `/simply:build`.
 
 A task with more than 7 criteria is too big: split it, or cut criteria that restate another.
 
-Research mode: one task per angle (one library, one question). Files is `read-only`, Checks is `none`, Criteria list the facts the angle must answer.
+Research mode: one task per angle (one library, one question). Files is the single line `- Work in: read-only`, Checks is `- none`, Criteria list the facts the angle must answer.
 
 ## Step 2. Write and check the briefs
 
 Write one brief per task in the format in `${CLAUDE_PLUGIN_ROOT}/skills/build/references/brief.md` to `.simply/factory/<YYYY-MM-DD-HHMM>-<slug>/<task-slug>.md` at the git root. Pin every decision in Constraints so workers don't remake it.
 
-Classify each build task (hard, standard, mechanical) per **Models**. Then run the checker and fix every error it reports before going on:
+Classify each build task (hard, standard, mechanical) per **Models**. For every build task that touches UI, add `- Dev server port: <3101 + task index>` to Constraints so parallel workers never start servers on the same port. Then run the checker and fix every error it reports before going on:
 
 ```bash
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/factory/scripts/check_briefs.py .simply/factory/<run>/*.md             # build mode
 python3 ${CLAUDE_PLUGIN_ROOT}/skills/factory/scripts/check_briefs.py --research .simply/factory/<run>/*.md  # research mode
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/factory/scripts/check_briefs.py --blocking .simply/factory/<run>/*.md  # blocking first step only
 ```
 
 It fails on missing sections, empty Criteria, more than 7 criteria, a brief count outside the **Limits**, and two briefs whose "Work in" paths overlap.
@@ -73,6 +74,14 @@ It fails on missing sections, empty Criteria, more than 7 criteria, a brief coun
 Show the checkpoint and a table `task | class | model | effort | Work-in files`. Dispatch nothing until the user confirms. If they edit the list, re-run Step 2's checker before dispatching.
 
 ## Step 4. Dispatch
+
+Precondition: worktrees branch from the main checkout's current commit, so it must be on the default branch and up to date. Check:
+
+```bash
+git fetch origin && git status -sb | head -1   # expect: ## <default>...origin/<default> with no ahead/behind
+```
+
+If it's on another branch, or behind, stop and tell the user, unless the request named that branch as the base on purpose.
 
 Spawn every worker in a single message, one Agent call per task, with the values from **Models**. Resolve `${CLAUDE_PLUGIN_ROOT}` to its absolute path in every prompt; workers read the skill file rather than invoke it, because subagents may not be able to call plugin skills by name.
 

@@ -1,6 +1,6 @@
 ---
 name: goodmorning
-description: "Start-of-day briefing. Use for 'goodmorning', 'good morning', 'where did we leave off', 'what's on today', or 'catch me up'. Reads the newest .simply/daily/ log written by /simply:goodnight, checks it against current git, PR, CI, and handoff state, flags drift, and suggests a first task. Read-only: changes nothing and waits for confirmation. Not for picking up a specific handoff."
+description: "Start of day: reads the last daily log, checks it against git, PRs, CI, and open handoffs, and suggests a first task. Changes nothing."
 disable-model-invocation: true
 ---
 
@@ -23,7 +23,13 @@ Otherwise read the log and take from its header: `updated`, `head`, and `branche
 
 ## Step 2. Parse the log
 
-Pull out Summary, In progress, Blocked, Open questions, Tomorrow, and Handoffs. If a heading is missing or a line does not match its section's shape, report that section as unreadable and keep going; do not guess its contents.
+First validate it with the same script goodnight uses:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/goodnight/scripts/check_log.py <log>
+```
+
+Then pull out Summary, In progress, Blocked, Open questions, Tomorrow, and Handoffs. Any section the script reports an error in is unreadable: say so in the briefing and keep going; do not guess its contents.
 
 ## Step 3. Check reality since the log
 
@@ -44,7 +50,7 @@ git log -1 --format=%cr "<branch>"
 gh pr view "<branch>" --json number,state,mergedAt,statusCheckRollup
 ```
 
-Handoffs: list every file under `.simply/handoffs/`. Read only its `Status:` line. A file with `Status: open` is unpicked; anything else is picked up. If the field is missing, list the file as "status unknown".
+Handoffs: list every file under `.simply/handoffs/`. Read only its `Status:` line. A file with `Status: open` is not yet taken; anything else is taken. If the field is missing, list the file as "status unknown".
 
 If `gh` is missing or unauthenticated, say so and continue with git only.
 
@@ -66,7 +72,7 @@ Also list commits since the log that touch no logged branch (5 max, newest first
 Build the list by these rules, in this order:
 1. Drop items flagged **merged** or **gone**.
 2. Items flagged **failing** first.
-3. Then unpicked handoffs (`Status: open`), newest first.
+3. Then open handoffs (`Status: open`), newest first.
 4. Then the rest in the log's Tomorrow order; items not in Tomorrow go last in log order.
 
 Keep the top 7. The suggested first task is item 1, with its `next` step from the log copied verbatim.
@@ -76,7 +82,7 @@ Keep the top 7. The suggested first task is item 1, with its `next` step from th
 A briefing in exactly these sections and order. Each section is 5 bullets max, except Open threads (7 max). Total 40 lines max.
 
 1. **Where we left off**: the log date and its Summary.
-2. **What changed since**: new commits, PR and CI changes, unpicked handoffs.
+2. **What changed since**: new commits, PR and CI changes, open handoffs.
 3. **Open threads, ranked**: each with its drift flag and `next` step.
 4. **Open questions** from the log, verbatim.
 5. **Suggested first task** and its exact next step.

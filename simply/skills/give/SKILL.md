@@ -1,6 +1,6 @@
 ---
 name: give
-description: "Writes a handoff for one in-flight task so a fresh chat or another agent can continue it with no loss of context. Freezes the code state (stash ref, branch, SHA) and saves .simply/handoffs/<timestamp>-<slug>.md at the git root. Use for 'hand this off', 'give this to another agent', 'continue in a new chat', 'write a handoff', 'context is getting full'. Not for summarizing a whole day (use /simply:goodnight). The reader is /simply:pickup."
+description: "Hands one in-progress task to a new chat or agent: freezes the code state and writes a handoff file for /simply:take. For a whole-day summary use /simply:goodnight."
 argument-hint: "[slug or note for the receiver]"
 disable-model-invocation: true
 ---
@@ -9,7 +9,7 @@ disable-model-invocation: true
 
 Turn the current task into one handoff file a cold agent can pick up and continue exactly where this conversation stopped.
 
-The format is the contract with `/simply:pickup`: follow [references/handoff-format.md](references/handoff-format.md) exactly, every heading, in order.
+The format is the contract with `/simply:take`: follow [references/handoff-format.md](references/handoff-format.md) exactly, every heading, in order.
 
 ## Step 1. Pick the task
 
@@ -49,12 +49,18 @@ Fill each section from the conversation and the repo, not memory:
 
 ## Step 4. Cold-read review
 
-Re-read the file as an agent that has never seen this chat. Fix any line that relies on the conversation: "the error", "that approach", "as above", a symbol with no path. Check that the Code state block matches Step 2 exactly.
+First check the structure, fix every error, and re-run until it prints `ok`:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/give/scripts/check_handoff.py <handoff>
+```
+
+Then re-read the file as an agent that has never seen this chat (the script can't check this part). Fix any line that relies on the conversation: "the error", "that approach", "as above", a symbol with no path. Check that the Code state block matches Step 2 exactly.
 
 ## Output
 
 - The handoff path.
-- One line to paste into the new chat: `/simply:pickup <absolute path>`
+- One line to paste into the new chat: `/simply:take <absolute path>`
 - If a stash was recorded: one line saying the stash lives only in this clone, so a receiver on another machine needs the WIP committed and pushed instead.
 
 ## Guardrails

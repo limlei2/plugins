@@ -1,6 +1,6 @@
 ---
 name: goodnight
-description: "End-of-day wrap-up. Use for 'goodnight', 'wrap up the day', 'end of day', 'save where we left off', or 'log today'. Gathers today's commits, PRs, handoffs, and this conversation into .simply/daily/YYYY-MM-DD.md so /simply:goodmorning can resume tomorrow, and saves durable project facts to CLAUDE.md. Not for handing work to another agent mid-day (use /simply:give)."
+description: "End of day: writes .simply/daily/<date>.md for /simply:goodmorning and saves lasting project facts to CLAUDE.md. To hand off one task mid-day use /simply:give."
 disable-model-invocation: true
 ---
 
@@ -34,6 +34,14 @@ find .simply/handoffs -type f -newermt "$TODAY" 2>/dev/null
 
 If `gh` is missing or unauthenticated, say so in the reply and continue with git only.
 
+Other sessions in this project today (5 max, excluding this one):
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/goodnight/scripts/recent_sessions.py "$ROOT" "${CLAUDE_SESSION_ID}"
+```
+
+Each result is a first request and a last reply, not a full record: use it to add Done or In progress items only where the reply states the outcome, and mark them `verified: unverified` unless a commit or PR above confirms them.
+
 Then read back through the current conversation for: what was finished and how it was checked, what is half done and the next concrete action, decisions and their reasons, questions the user never answered, things blocked on someone else, and skill misfires or corrections the user repeated.
 
 ## Step 3. Fill every field from evidence
@@ -52,7 +60,13 @@ If an In progress item has no `next` or a Blocked item has no `unblocks`, ask th
 
 Create `.simply/daily/` if missing. If today's log already exists, merge: keep earlier items, update any that changed state (an In progress item now Done moves to Done), drop exact duplicates, and set `updated` to now. Write the whole file in the format's exact headings and order, with `- none` for empty sections.
 
-Check it: every heading from the format present once, in order; every In progress line has `branch:` and `next:`; every Blocked line has `unblocks:`. Fix and re-check until all pass.
+Check it, fix every error it prints, and re-run until it prints `ok`:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/goodnight/scripts/check_log.py "$LOG"
+```
+
+`/simply:goodmorning` runs the same script before reading, so a log that fails here is a log tomorrow can't parse.
 
 ## Step 5. Save durable facts
 

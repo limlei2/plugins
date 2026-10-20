@@ -1,16 +1,16 @@
 # Handoff Format
 
-The contract between `/simply:give` (writer) and `/simply:pickup` (reader). Both follow this file exactly. Other skills read only the `Status:` line.
+The contract between `/simply:give` (writer) and `/simply:take` (reader). Both follow this file exactly. Other skills read only the `Status:` line.
 
 ## Location
 
-`<git root>/.simply/handoffs/<YYYY-MM-DD-HHMM>-<slug>.md`. The timestamp is local time when written, so filenames sort oldest to newest. The slug is 2-5 lowercase hyphenated words naming the task.
+`<git root>/.simply/handoffs/<YYYY-MM-DD-HHMM>-<slug>.md`. The timestamp is local time when written, so filenames sort oldest to newest. The slug is the first word of `/give`'s argument if it matches `^[a-z0-9-]{3,40}$`, else 2–4 lowercase hyphenated words naming the task.
 
 ## Rules
 
 - Line 3 is the status line, exactly one of:
   - `Status: open`
-  - `Status: picked-up by <git config user.name> at <YYYY-MM-DD HH:MM>`
+  - `Status: taken by <git config user.name> at <YYYY-MM-DD HH:MM>`
 - Every heading below appears, in this order, even when empty. Write `None.` rather than deleting a section.
 - Write for a reader with zero conversation history: full paths, exact commands, exact error text. No "as discussed", no "the bug", no pronouns pointing at the chat.
 - Facts only. If something is a guess, say so in the line.
@@ -20,7 +20,7 @@ The contract between `/simply:give` (writer) and `/simply:pickup` (reader). Both
 | Heading | What goes in it |
 |---|---|
 | `# Handoff: <title>` | One-line task name. |
-| `Status:` | See Rules. `/give` writes `open`; `/pickup` changes it. |
+| `Status:` | See Rules. `/give` writes `open`; `/take` changes it. |
 | `Created:` | `<YYYY-MM-DD HH:MM> by <git config user.name>`. |
 | `## Goal` | The outcome when the task is done, and why it matters. 1-3 sentences. |
 | `## Done so far` | One bullet per finished piece, each ending with `Verified: <command run or check made, and its result>`. Unverified work goes under In progress. |
@@ -28,7 +28,7 @@ The contract between `/simply:give` (writer) and `/simply:pickup` (reader). Both
 | `## Exact next step` | The single next action, concrete enough to start without thinking: file, function, command. |
 | `## Decisions and why` | Choices made that the receiver must not silently reverse, each with its reason. |
 | `## Dead ends` | Approaches already tried that failed, each with why, so they are not retried. |
-| `## Files involved` | Path plus one phrase on its role. Repo-relative paths. |
+| `## Files involved` | One bullet per file: ``- `<repo-relative path>`: <its role>``. `/take`'s verifier reads the backticked path, so it is required. |
 | `## Code state` | `Branch:`, `Commit:` (full SHA of HEAD), `Stash:` (full stash commit SHA or `none`), `Dirty files:` (the `git status --porcelain` lines at handoff, or `none`). |
 | `## How to verify` | Commands that prove the whole task works when finished, and what passing looks like. |
 | `## Open questions` | Unresolved questions, and who can answer each (user, another agent, docs). |
@@ -40,7 +40,7 @@ The contract between `/simply:give` (writer) and `/simply:pickup` (reader). Both
 # Handoff: Retry failed webhook deliveries
 
 Status: open
-Created: 2026-10-20 16:42 by claude (session "webhooks")
+Created: 2026-10-20 16:42 by limlei2
 
 ## Goal
 Failed webhook deliveries are retried with exponential backoff up to 5 times, so customers stop missing events when their endpoint blips.

@@ -1,11 +1,11 @@
 ---
-name: pickup
-description: "Loads a handoff written by /simply:give, verifies the repo matches it (branch, commit, stash, files), marks it picked up, and continues the task from its exact next step. Use for 'pick up the handoff', 'continue from handoff', 'resume that task', or when given a .simply/handoffs/*.md path. With no path, takes the newest open handoff. Not for reviewing the day's leftovers (use /simply:goodmorning)."
+name: take
+description: "Resumes a /simply:give handoff: verifies the repo matches it, then continues from its exact next step."
 argument-hint: "[handoff-path]"
 disable-model-invocation: true
 ---
 
-# Pickup
+# Take
 
 Continue a task from a `/simply:give` handoff with no loss of context, after proving the code in front of you is the code the handoff describes.
 
@@ -20,29 +20,27 @@ ROOT=$(git rev-parse --show-toplevel)
 grep -l '^Status: open$' "$ROOT"/.simply/handoffs/*.md | sort | tail -1
 ```
 
-If none is found, say so, list the five newest files in `.simply/handoffs/` with their `Status:` lines, and stop. If the chosen file says `Status: picked-up`, tell the user who took it and when, and stop unless they confirm.
+If none is found, say so, list the five newest files in `.simply/handoffs/` with their `Status:` lines, and stop. If the chosen file says `Status: taken`, tell the user who took it and when, and stop unless they confirm.
 
-Read the whole file.
+Read the whole file, then validate it:
+
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/give/scripts/check_handoff.py <handoff>
+```
+
+If it reports errors, list them and stop: the handoff is incomplete, and guessing the missing parts defeats the point of a handoff.
 
 ## Step 2. Verify before trusting
 
-Compare each recorded value in Code state with the repo:
+From the git root, run the verifier. It is read-only and compares branch, commit, stash, listed files, and working tree with the handoff's Code state:
 
-| Check | Command | Match when |
-|---|---|---|
-| Branch | `git branch --show-current` | equals `Branch:` |
-| Commit | `git rev-parse HEAD` | equals `Commit:` |
-| Stash | `git cat-file -t <Stash>` | prints `commit` (skip if `none`) |
-| Working tree | `git status --porcelain -- . ':(exclude).simply'` | see below |
-| Files | `ls` each path in Files involved | all exist, except files the handoff says are new or deleted |
+```bash
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/take/scripts/verify_state.py <handoff>
+```
 
-Working tree, when a stash is recorded:
-- Tree clean: run `git stash apply --index <Stash>`, then re-run the status check.
-- Tree dirty: `git diff <Stash>` must print nothing (same machine, giver's edits still present).
-
-After that, the status lines must equal `Dirty files:`.
-
-On any mismatch, stop. Report a table of expected vs actual for each failed check and the command that would fix it (for example `git switch <branch>`), but do not run it. Do not edit the handoff or any code.
+- Exit `0`: everything matches. Go to Step 3.
+- Exit `2` (`NEEDS_APPLY`): the tree is clean and the giver's uncommitted work is in the recorded stash. Run the `git stash apply --index <sha>` it prints, then re-run the verifier; it must exit `0`.
+- Exit `1`: mismatch. Show the user the table it printed, which includes the fix for each failed check, and stop. Do not run any fix yourself, edit the handoff, or touch code.
 
 ## Step 3. Restate and claim
 
@@ -51,7 +49,7 @@ Write one paragraph to the user: the goal, where it stands, and the exact next s
 Then edit line 3 of the handoff to:
 
 ```
-Status: picked-up by <git config user.name> at <YYYY-MM-DD HH:MM>
+Status: taken by <git config user.name> at <YYYY-MM-DD HH:MM>
 ```
 
 ## Step 4. Continue
@@ -75,6 +73,6 @@ Throughout:
 ## Guardrails
 
 - Never "fix" a mismatch by checking out, resetting, or stashing on your own; the user decides.
-- Never mark `picked-up` before verification passes.
+- Never mark `taken` before verification passes.
 - Do not rely on the original conversation or ask the giver for context the file should hold; missing context is a gap to report.
 - Do not open questions already answered under Decisions and why.

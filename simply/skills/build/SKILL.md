@@ -1,6 +1,6 @@
 ---
 name: build
-description: "Takes one task from request to open PR: frames it as a brief, implements the smallest change, verifies against each criterion, self-reviews, and ships a PR or escalates. Use for '/simply:build', 'build this', 'implement and open a PR', or when a /simply:factory worker is handed a brief. One agent, one task, one PR; never spawns subagents. For work that splits into parallel tasks, use /simply:factory."
+description: "One task to one verified PR: writes or follows a brief, implements, verifies, self-reviews, then opens the PR or escalates. For parallel tasks use /simply:factory."
 argument-hint: "<task, or a brief in references/brief.md format>"
 disable-model-invocation: true
 ---
@@ -18,12 +18,12 @@ Turn one task into one verified PR, or into a precise escalation.
 
 Hard limits. Hitting one means stop and escalate (Step 7); never push past it.
 
-| Limit | Value |
-| --- | --- |
-| Criteria in the brief | 7 max |
-| Self-review rounds (Step 6) | 2 max |
-| Diff size, excluding lockfiles and generated files | 400 changed lines, 10 files |
-| Clarifying questions (standalone only) | 1 message, before any code |
+| Limit | Value | Why |
+| --- | --- | --- |
+| Criteria in the brief | 7 max | More than 7 means more than one task; it should be split, not squeezed. |
+| Self-review rounds (Step 6) | 2 max | Two failed fixes on one premise mean the premise is wrong; a third fix wastes tokens on the same mistake. |
+| Diff size, excluding lockfiles and generated files | 400 changed lines, 10 files | Past this a reviewer stops reading carefully, so bugs get through. Smaller PRs get real review. |
+| Clarifying questions (standalone only) | 1 message, before any code | Questions after work starts waste the work done; one batched message respects the user's time. |
 
 Over the diff limit, the task is too big for one PR. Escalate with a proposed split for `/simply:factory`.
 
@@ -46,19 +46,32 @@ Ambiguity inside a valid brief: take the most literal reading, note it as an ass
 
 ## Step 3. Branch
 
+Find the default branch (both modes):
+
+```bash
+DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+[ -n "$DEFAULT" ] || DEFAULT=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
+git fetch origin "$DEFAULT"
+```
+
 Under factory the worktree already has a branch; use it. Standalone:
 
 ```bash
 test -z "$(git status --porcelain)" || { echo "dirty tree"; exit 1; }
-BASE=$(git symbolic-ref --short refs/remotes/origin/HEAD | sed 's|^origin/||')
-git fetch origin "$BASE" && git switch -c "build/<slug>" "origin/$BASE"
+git switch -c "build/<slug>" "origin/$DEFAULT"
 ```
 
 `<slug>`: 2–4 lowercase words from the Goal, hyphenated. A dirty tree stops the build: tell the user to commit or stash first. Don't stash for them.
 
+Then, in both modes, record the base commit that Steps 6 and 7 compare against:
+
+```bash
+BASE=$(git merge-base HEAD "origin/$DEFAULT")
+```
+
 ## Step 4. Implement
 
-Before writing code, read the rules for the layer you touch and follow them:
+Before writing code, read the rules for the layer you touch and follow them. If a rules file doesn't exist yet, skip it and add `rules: <name> missing` to the PR's Assumptions.
 
 | Touching | Read |
 | --- | --- |
@@ -75,7 +88,7 @@ Commit after each working unit, each leaving the checks green. Message: `<type>(
 
 1. Run every command in Checks. Each must pass.
 2. Check each criterion against the real artifact and record the evidence: command plus result, or file and line (principle: `principle-prove-it-works`). Verify on the surface the user meets:
-   - UI change: start the project's dev server (the `dev` script in `package.json`, or the command in `CLAUDE.md`), open the page in the built-in browser (`mcp__Claude_Browser__*`), and check the default, empty, loading, and error states. Evidence: the URL and what you saw in each state.
+   - UI change: start the project's dev server (the `dev` script in `package.json`, or the command in `CLAUDE.md`) on the port named in the brief's Constraints (`PORT=<n>`, or `--port <n>` for Vite), else the default port, open the page in the built-in browser (`mcp__Claude_Browser__*`), and check the default, empty, loading, and error states. Evidence: the URL and what you saw in each state.
    - API change: call the endpoint (`curl`) and read the real response.
    - Data change: query the result, don't trust the migration's exit code.
    - CLI or script: run it with real arguments.
@@ -85,7 +98,7 @@ When a check fails, find the first place the system went wrong and fix it there,
 
 ## Step 6. Self-review
 
-Read `git diff <base>...HEAD` as a reviewer would:
+Read `git diff $BASE...HEAD` as a reviewer would:
 - Bugs and unhandled edge cases.
 - Callers of changed code you didn't update (`grep` for every renamed or changed symbol).
 - Changes outside the brief's scope.
@@ -100,7 +113,7 @@ At most 2 review-fix rounds. If the same premise fails twice (the same check, th
 
 **Ship** when every check passes and every criterion has evidence:
 
-1. Tidy history: squash fixup commits into the commit they fix (`git rebase -i` is unavailable, so use `git reset --soft <base>` and recommit). 5 commits max, each one landable and in order.
+1. Tidy history: squash fixup commits into the commit they fix (`git rebase -i` is unavailable, so use `git reset --soft $BASE` and recommit). 5 commits max, each one landable and in order.
 2. Push and open the PR ready for review, never as a draft:
 
 ```bash

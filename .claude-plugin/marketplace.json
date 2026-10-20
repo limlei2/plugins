@@ -1,0 +1,13 @@
+{
+  "name": "limlei2-plugins",
+  "owner": {
+    "name": "limlei2"
+  },
+  "plugins": [
+    {
+      "name": "simply",
+      "source": "./simply",
+      "description": "Personal skills for getting everyday tasks done."
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "name": "simply",
+  "version": "0.1.0",
+  "description": "Personal skills for getting everyday tasks done.",
+  "author": {
+    "name": "limlei2"
+  },
+  "license": "MIT",
+  "keywords": [
+    "skills",
+    "workflow"
+  ]
+}

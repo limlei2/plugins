@@ -73,16 +73,8 @@ BASE=$(git merge-base HEAD "origin/$DEFAULT")
 
 ## Step 4. Implement
 
-Before writing code, read the rules for the layer you touch and follow them.
-
-| Touching | Read |
-| --- | --- |
-| UI components, styles, pages | `${CLAUDE_PLUGIN_ROOT}/skills/rule-frontend/SKILL.md` |
-| Server logic, services, jobs | `${CLAUDE_PLUGIN_ROOT}/skills/rule-backend/SKILL.md` |
-| Schema, migrations, queries | `${CLAUDE_PLUGIN_ROOT}/skills/rule-db/SKILL.md` |
-| Endpoints, request/response shapes | `${CLAUDE_PLUGIN_ROOT}/skills/rule-api-design/SKILL.md` |
-
 Before writing code:
+- Follow the conventions in the project's `CLAUDE.md` and the patterns of the nearest similar file.
 - Remove dead code and redundant layers the change would build on (rule: `rule-delete-first`).
 - If the requirement doesn't fit the current design, reshape the design rather than bolting it on (rule: `rule-design-it-in`).
 - Validate untrusted input once, at the boundary; trust internal types after (rule: `rule-validate-at-the-edges`).

@@ -22,4 +22,4 @@ Validate and handle errors where data enters the system: request handlers, CLI a
 - Price calculation inside an Express route handler.
 - Reading `process.env` deep in business code instead of a parsed config object.
 
-**In simply:** the layer rules `/simply:build` Step 4 reads (`rule-backend`, `rule-api-design`, `rule-db`). The simply scripts follow it: `check_handoff.py`, `check_log.py`, and `check_briefs.py` validate a file at the boundary so readers can trust it.
+**In simply:** `/simply:build` Step 4 (before writing code). The simply scripts follow it: `check_handoff.py`, `check_log.py`, and `check_briefs.py` validate a file at the boundary so readers can trust it.

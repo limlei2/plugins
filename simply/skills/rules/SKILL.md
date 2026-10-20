@@ -1,22 +1,11 @@
 ---
 name: rules
-description: "Index of every rule-* skill in simply: domain rules for frontend, backend, database, and API code, and working rules for how much to build, how to verify, how to debug, and how to run agents. Use it whenever planning a change, writing code in any of those layers, debugging a failure, deciding whether something is done, reviewing a diff, splitting work across agents, retrying after a failed fix, or deciding whether to ask the user — even if the user doesn't mention rules. Also use it when the user names a rule (\"verify the real thing\", \"question the assumption\", \"smallest change\")."
+description: "Index of every rule-* skill in simply: working rules for how much to build, how to verify, how to debug, and how to run agents. Use it whenever planning a change, debugging a failure, deciding whether something is done, reviewing a diff, splitting work across agents, retrying after a failed fix, or deciding whether to ask the user — even if the user doesn't mention rules. Also use it when the user names a rule (\"verify the real thing\", \"question the assumption\", \"smallest change\")."
 ---
 
 # Rules
 
 Every rule is its own skill at `${CLAUDE_PLUGIN_ROOT}/skills/rule-<name>/SKILL.md`. This page says when each one applies. When a situation below matches, read that rule's file in full before acting, apply it, and name it in your reply with the decision it changed (for example: "rule-question-the-assumption: stopped after the second failed fix and tested the cache assumption"). Naming a rule without a changed decision means it wasn't applied.
-
-## Domain rules
-
-These also load on their own when you edit matching files. The project's `CLAUDE.md` wins where they disagree.
-
-| Rule | Apply when |
-| --- | --- |
-| `rule-frontend` | Writing or changing components, pages, styles, forms, or client state |
-| `rule-backend` | Writing server logic, services, jobs, workers, or webhooks |
-| `rule-db` | Changing schema, writing migrations or queries, or chasing a slow query |
-| `rule-api-design` | Adding or changing endpoints, request or response shapes, or status codes |
 
 ## Verifying and debugging
 

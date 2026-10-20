@@ -51,12 +51,17 @@ Write one paragraph to the user: the goal, where it stands, and the exact next s
 Then edit line 3 of the handoff to:
 
 ```
-Status: picked-up by <who> at <YYYY-MM-DD HH:MM>
+Status: picked-up by <git config user.name> at <YYYY-MM-DD HH:MM>
 ```
 
 ## Step 4. Continue
 
-Do the Exact next step, then keep going toward the Goal. Throughout:
+Do the Exact next step. Then continue only with work the handoff names: the rest of In progress, then the Goal. Stop and report when any of these happens:
+- The How to verify commands pass: the Goal is done.
+- The next action needs a decision not recorded under Decisions and why.
+- The next action is outside Files involved and the Goal doesn't clearly require it.
+
+Throughout:
 - Honor Decisions and why. Reversing one needs a stated reason to the user first.
 - Do not retry anything in Dead ends unless something the dead end depended on has changed; say what.
 - Finish with the How to verify commands and report their result.

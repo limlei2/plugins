@@ -10,7 +10,7 @@ The contract between `/simply:give` (writer) and `/simply:pickup` (reader). Both
 
 - Line 3 is the status line, exactly one of:
   - `Status: open`
-  - `Status: picked-up by <who> at <YYYY-MM-DD HH:MM>`
+  - `Status: picked-up by <git config user.name> at <YYYY-MM-DD HH:MM>`
 - Every heading below appears, in this order, even when empty. Write `None.` rather than deleting a section.
 - Write for a reader with zero conversation history: full paths, exact commands, exact error text. No "as discussed", no "the bug", no pronouns pointing at the chat.
 - Facts only. If something is a guess, say so in the line.
@@ -21,7 +21,7 @@ The contract between `/simply:give` (writer) and `/simply:pickup` (reader). Both
 |---|---|
 | `# Handoff: <title>` | One-line task name. |
 | `Status:` | See Rules. `/give` writes `open`; `/pickup` changes it. |
-| `Created:` | `<YYYY-MM-DD HH:MM> by <who>` (agent/session or person). |
+| `Created:` | `<YYYY-MM-DD HH:MM> by <git config user.name>`. |
 | `## Goal` | The outcome when the task is done, and why it matters. 1-3 sentences. |
 | `## Done so far` | One bullet per finished piece, each ending with `Verified: <command run or check made, and its result>`. Unverified work goes under In progress. |
 | `## In progress` | What is half-done and in what state (compiles? tests red?). |

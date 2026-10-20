@@ -59,15 +59,21 @@ Mark each In progress and Blocked item with one flag, first match wins:
 - **stale**: no commit on the branch in 3 or more days.
 - **as left**: none of the above.
 
-Also note commits since the log that touch no logged branch: someone else's work the user may need to know about.
+Also list commits since the log that touch no logged branch (5 max, newest first): work the log doesn't know about.
 
 ## Step 5. Rank open threads and pick a first task
 
-Start from the log's Tomorrow order, then adjust: drop merged items, raise failing ones, raise anything that unpicked handoffs or new commits make urgent. The suggested first task is the top item, with its `next` step from the log copied verbatim.
+Build the list by these rules, in this order:
+1. Drop items flagged **merged** or **gone**.
+2. Items flagged **failing** first.
+3. Then unpicked handoffs (`Status: open`), newest first.
+4. Then the rest in the log's Tomorrow order; items not in Tomorrow go last in log order.
+
+Keep the top 7. The suggested first task is item 1, with its `next` step from the log copied verbatim.
 
 ## Output
 
-A short briefing, in this order, each section a few lines at most:
+A briefing in exactly these sections and order. Each section is 5 bullets max, except Open threads (7 max). Total 40 lines max.
 
 1. **Where we left off**: the log date and its Summary.
 2. **What changed since**: new commits, PR and CI changes, unpicked handoffs.

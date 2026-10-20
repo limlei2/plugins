@@ -43,10 +43,10 @@ For each item, use what the commands and conversation show. Do not invent.
 - **Done `verified`**: the actual check that passed (test command and count, CI status from `gh pr checks <n>`, a manual check the user confirmed). If nothing verified it, write `verified: unverified`.
 - **In progress `next`**: precise enough to act on cold, naming the file, function, command, or failing test. "Continue work" is not a next step. If you cannot name one, ask the user.
 - **Uncommitted changes** from `git status` on a branch go under In progress with that branch, and `next` says to commit or finish them.
-- **Tomorrow**: rank by what unblocks others first, then what is closest to done.
-- **Skill notes**: only real incidents from this session. Write the suggestion; never edit the skill.
+- **Tomorrow**: 5 items max, ranked by these rules in order: (1) items that unblock someone else, (2) In progress items with the fewest remaining steps, (3) everything else in the order the user mentioned them.
+- **Skill notes**: 5 max, only incidents from this session: the user corrected the agent, a skill step was skipped or wrong, or the same instruction was repeated. Each names the skill, what happened, and the suggested change. Never edit the skill.
 
-If an In progress item has no `next` or a Blocked item has no `unblocks`, ask the user once, listing all gaps together, before writing.
+If an In progress item has no `next` or a Blocked item has no `unblocks`, ask the user once, listing all gaps together, then wait. If the user doesn't supply one, write `next: missing` or `unblocks: missing`; never invent one.
 
 ## Step 4. Write the log
 
@@ -59,7 +59,7 @@ Check it: every heading from the format present once, in order; every In progres
 A durable fact is true beyond today: a new convention, a gotcha, a required setup step, a command that must be run a certain way. Day-specific detail (what you did, what is pending) stays only in the log.
 
 1. Pick the target: `CLAUDE.md` at the git root if it exists, else `README.md`. If neither exists, list the facts in the reply and ask before creating `CLAUDE.md`.
-2. Skip facts already stated there. Add new ones under the most fitting existing section, one line each.
+2. Skip facts already stated there. Add new ones, 5 max per run, one line each, under the heading `## Conventions and gotchas` (create it at the end of the file if missing). Never edit other sections.
 3. Show the user a diff summary: file, lines added, lines changed. Record each fact in the log's `## Durable facts saved`.
 
 If there are no new durable facts, write nothing and say so.

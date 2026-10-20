@@ -13,7 +13,7 @@ The format is the contract with `/simply:pickup`: follow [references/handoff-for
 
 ## Step 1. Pick the task
 
-Identify the single task in flight from the conversation. If several are interleaved, take the one the user worked on last and name the others under Open questions. Slug: from `$ARGUMENTS` if it looks like a slug, else 2-5 words from the task. Anything else in `$ARGUMENTS` goes under Note from giver.
+Identify the single task in flight from the conversation. If several are interleaved, take the one the user worked on last and name the others under Open questions. Slug: the first word of `$ARGUMENTS` if it matches `^[a-z0-9-]{3,40}$`, else 2–4 lowercase hyphenated words from the task. Anything else in `$ARGUMENTS` goes under Note from giver.
 
 ## Step 2. Freeze the code state
 

@@ -4,7 +4,7 @@ My Claude Code plugin marketplace. Each plugin lives in its own folder.
 
 | Plugin | What it holds |
 | --- | --- |
-| [simply](simply/) | Personal skills for everyday tasks, run as `/simply:<skill>` |
+| [simply](simply/) | My personal skills for coding, run as `/simply:<skill>` |
 
 ## simply skills
 
@@ -14,11 +14,11 @@ Full usage guide: **[simply/README.md](simply/README.md)**.
 | --- | --- |
 | `/simply:build` | One task → one verified PR |
 | `/simply:factory` | 2–5 parallel `/build` workers (or `research` workers), checked and reported |
+| `/simply:research` | One question researched online, sourced, with one recommendation |
 | `/simply:goodmorning` | Start of day: reads last night's log, checks it against git/PRs/CI, suggests a first task |
 | `/simply:goodnight` | End of day: writes the daily log and saves lasting facts to `CLAUDE.md` |
 | `/simply:give` | Hands one in-progress task to a new chat or agent |
 | `/simply:take` | Resumes a handoff after verifying the repo matches it |
-| `/simply:research` | One question researched online, sourced, with one recommendation |
 | `/simply:new-skill` | Drafts a new skill in the house style |
 | `rules` + 21 `rule-*` | Working rules the skills cite at each step; see the guide |
 

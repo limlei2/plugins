@@ -1,17 +1,18 @@
 # simply
 
-Personal Claude Code skills for getting work done. Every skill runs only when you type it: `/simply:<skill>`.
+My personal skills for coding. Every skill runs only when you type it: `/simply:<skill>`.
 
 | Skill | Use it to |
 | --- | --- |
 | [`/simply:build`](#simplybuild) | Take one task all the way to one verified PR |
 | [`/simply:factory`](#simplyfactory) | Split work into 2–5 parallel tasks, each done by its own `/build` worker |
+| [`/simply:research`](#simplyresearch) | Research one question online and get one sourced recommendation |
 | [`/simply:goodmorning`](#simplygoodmorning) | Start the day: where we left off, what changed overnight, what to do first |
 | [`/simply:goodnight`](#simplygoodnight) | End the day: save everything tomorrow's session needs |
 | [`/simply:give`](#simplygive) | Hand one in-progress task to a new chat or another agent |
 | [`/simply:take`](#simplytake) | Resume a task someone handed over with `/give` |
 
-Also included: [`/simply:research`](#simplyresearch) and [`/simply:new-skill`](#simplynew-skill).
+Also included: [`/simply:new-skill`](#simplynew-skill).
 
 ## Before you start
 
@@ -23,6 +24,7 @@ A typical day:
 
 ```
 /simply:goodmorning          → briefing, pick a first task
+/simply:research <question>  → pick a library or approach before building
 /simply:build <task>         → one PR        (or /simply:factory for several at once)
 /simply:give                 → context full? hand off…
 /simply:take <path>          → …and continue in a fresh chat
@@ -98,6 +100,35 @@ The first word picks the mode: `research`, or `build` (the default).
 **Limits:** 2–5 build workers (2–6 research), 1 retry per task, 11 agents total per run (12 for research). More tasks than that → it runs the first batch and lists the rest as "next run".
 
 **Research mode** sends read-only workers out, one per option or question, then combines their findings into one comparison table and one recommendation, with facts kept separate from its own inferences.
+
+---
+
+## `/simply:research`
+
+**One question, researched online, ending in one recommendation.** A single agent; it never edits files or starts other agents. `/factory research` runs it in parallel, one worker per option.
+
+```
+/simply:research which job queue fits this repo: BullMQ, pg-boss, or Graphile Worker?
+```
+
+**What happens**
+
+1. **Brief.** It turns the question into a brief: the goal, and the facts the answer needs as checkable questions ("last release date?", "supports SSR?"). It reads your repo's package files and `CLAUDE.md` so the research fits your stack. It shows the brief and keeps going; it asks you (once) only if it can't tell what's being asked. More than 4 options → it keeps the 4 most used and says which it dropped.
+2. **Gather.** Official docs and changelogs first, then the project's repo (stars, last release, open issues), then package registries. Articles and discussions count only for experience and opinion, never as the only source for a fact.
+3. **Verify.** A fact that decides the pick needs a second source, or is flagged single-source. When sources disagree it keeps both and notes which is newer. After 3 failed searches for a fact, it marks it `unknown` instead of guessing.
+4. **Separate** facts (each with its source and the date or version it applies to) from inference (each with a high, medium, or low confidence) and unknowns.
+
+**What you get**, always in this order: Answer · Findings (table of question, answer, source, as-of) · Inference · Unknowns · Sources · Recommendation (exactly one pick, the findings that decide it, and the one fact that would change it).
+
+**Limits**
+
+| Limit | Value |
+| --- | --- |
+| Options compared | 4 |
+| Facts per option | 7 for one option; 5 each when comparing 2–4 |
+| Searches + page fetches | 40 (15 as a `/factory` worker) |
+| Searches per fact before `unknown` | 3 |
+| Questions to you | 1 message, before searching |
 
 ---
 
@@ -181,14 +212,6 @@ The optional argument names the handoff; anything after it is passed on as a not
 4. **Continues** from the exact next step. It respects recorded decisions, doesn't retry dead ends, and stops when the handoff's checks pass, when it needs a decision the handoff doesn't cover, or when work would go beyond the listed files.
 
 ---
-
-## `/simply:research`
-
-**One question, researched online.** Returns: Answer · Findings (each with source and date/version) · Inference (with confidence) · Unknowns · Sources · Recommendation (exactly one pick, and what would change it). Compares up to 4 options within 40 searches. `/factory research` runs it in parallel, one worker per option.
-
-```
-/simply:research which job queue fits this repo: BullMQ, pg-boss, or Graphile Worker?
-```
 
 ## `/simply:new-skill`
 

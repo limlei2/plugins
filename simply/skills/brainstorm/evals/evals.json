@@ -13,7 +13,8 @@
         "every bullet under ## Decisions contains 'why:'",
         "no file outside .simply/ was changed in the repo (git status --porcelain -- . ':!.simply' is empty)",
         "every bullet under ## Decisions ends with a tag: (you), (my call), or (code: <file>:<line>)",
-        "no message to the user contains a **Question:** line before design.md is written"
+        "no message to the user contains a **Question:** line before design.md is written",
+        "the run log has a brainstorm line naming the builder check's question count"
       ]
     },
     {
@@ -28,7 +29,8 @@
         "every bullet under ## Decisions contains 'why:'",
         "no file outside .simply/ was changed in the repo (git status --porcelain -- . ':!.simply' is empty)",
         "every bullet under ## Decisions ends with a tag: (you), (my call), or (code: <file>:<line>)",
-        "no message to the user contains a **Question:** line before design.md is written"
+        "no message to the user contains a **Question:** line before design.md is written",
+        "the run log has a brainstorm line naming the builder check's question count"
       ]
     },
     {
@@ -39,8 +41,9 @@
       "files": [],
       "expectations": [
         "the reply says the user can reply skip to let it decide the rest",
-        "the reply has exactly one **Question:** line, plus a **Found:** line citing a file and a **My answer:** line",
+        "the reply asks exactly one question",
         "the question is not one todo.py already answers (for example, where todos are stored)",
+        "if the question is open (who it's for, why, what success looks like) it lists no example answers; if it is narrow it has **Found:** and **My answer:** lines",
         "design.md does not exist yet and no file outside .simply/ was changed"
       ]
     }

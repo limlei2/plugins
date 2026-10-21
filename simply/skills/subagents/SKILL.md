@@ -105,6 +105,6 @@ A table `task | class | model | branch | retried | escalation`, then each escala
 
 ## Guardrails
 
-- Never let a worker spawn agents (only this skill spawns, one level deep): nesting breaks the 10-agent cap.
+- Never let a worker spawn agents (workers are one level deep): nesting breaks the 10-agent cap.
 - Never open a PR: review opens them on approve, so a PR now ships unchecked code.
 - Never edit a worker's branch or code yourself: retry with a fresh worker; your edit would skip report and checks.

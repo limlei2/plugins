@@ -60,7 +60,7 @@ Write the criteria before any code exists (rule: `rule-criteria-before-code`). O
 check_briefs.py <run>/tasks/*.md
 ```
 
-Fix every error it reports and re-run until it prints nothing and exits 0. Then `run_state.py set <run> pending=<all task numbers, comma-separated>`.
+Fix every error it reports and re-run until it exits 0 (it then prints `ok: <n> briefs`). Then `run_state.py set <run> pending=<all task numbers, comma-separated>`.
 
 ## Step 3. Ask how to execute (first plan, every run, both modes)
 

@@ -38,6 +38,8 @@ python3 $S check "$RUN" && python3 $S set "$RUN" stage=review
 for f in mode loop execute branch; do python3 $S get "$RUN" $f; done
 ```
 
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 Read `$RUN/design.md` and every `$RUN/tasks/<n>-<slug>.md`. Find the base every diff compares against:
 
 ```bash

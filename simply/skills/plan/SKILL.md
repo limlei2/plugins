@@ -17,6 +17,8 @@ RS="${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py"   # path only, so "
 CB="${CLAUDE_PLUGIN_ROOT}/skills/plan/scripts/check_briefs.py"
 ```
 
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Modes
 
 Find the run first. Handed off: use its `$RUN`. Typed directly: `RUN=$("$RS" latest "$(git rev-parse --show-toplevel)")`; no run means stop and tell the user to run `/simply:start <task>`. Then `"$RS" get "$RUN" loop`:

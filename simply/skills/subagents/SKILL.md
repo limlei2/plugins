@@ -15,6 +15,8 @@ Dispatch one fresh worker per pending brief, in parallel, and collect a valid re
 
 `run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. Run folder and report format: `${CLAUDE_PLUGIN_ROOT}/skills/start/references/run-format.md`. Find the run with `run_state.py latest "$(git rev-parse --show-toplevel)"` unless the previous stage named it.
 
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 You only dispatch and collect. Judging code quality is review's job, not yours.
 
 ## Limits

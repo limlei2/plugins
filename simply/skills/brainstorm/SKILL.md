@@ -16,6 +16,8 @@ Settle intent before planning: one goal, one approach, every decision written do
 RS="${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py"   # path only, so "$RS" works in bash and zsh; each Bash call starts fresh, so repeat this line
 ```
 
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Limits
 
 | Limit | Value | Why |

@@ -15,6 +15,8 @@ Turn each planned brief into tested, verified, pushed commits plus a report that
 
 `run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. Run folder, `run.md` fields, and the report format: `${CLAUDE_PLUGIN_ROOT}/skills/start/references/run-format.md`. Brief format: `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md`.
 
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Modes
 
 - **Inline** (the run's `execute` is `tdd`, or the user typed `/simply:tdd`): you run every task in `pending`, in number order, on one branch. Find the run with `run_state.py latest "$(git rev-parse --show-toplevel)"` unless the previous stage named it. Ends with **Hand-off**.
@@ -81,7 +83,7 @@ For each criterion, in brief order:
 1. **Red.** Write one test that asserts what a caller or user observes (rule: `rule-test-what-users-see`). Run it. It must fail, and fail for the reason the criterion names: an assertion on the missing behavior, not an import error, typo, or missing fixture. A test that passes before any code means the criterion is already met or the test is wrong; find out which and record it.
 2. **Green.** Write the smallest code that makes it pass (rule: `rule-smallest-change`). Run it again: it must pass.
 3. **Checks.** Run every command in the brief's Checks. All must pass; fix the first place things went wrong, not where the symptom showed (rule: `rule-fix-at-the-source`).
-4. **Commit** with every check green (rule: `rule-small-green-steps`): `<type>(<scope>): <subject>`, `type` one of `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`; subject short, imperative, no trailing period.
+4. **Commit** with every check green (rule: `rule-small-green-steps`): `<type>(<scope>): <subject>`, `type` one of `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`; subject short, imperative, no trailing period. One `git add <files>` call, then one `git commit` call, as in **Commands**.
 
 A criterion no test can observe (docs text, a config value): skip red, make the change, record "no test: <reason>" under Assumptions, and prove it in Step 5.
 
@@ -111,7 +113,7 @@ Fix what you find, commit, then repeat Step 5. At most 2 review-fix rounds (rule
 
 Escalate when the brief is wrong or a **Limits** value is hit (rule: `rule-ask-with-context`). Keep partial commits only if every Check passes on them; otherwise `git reset --hard $TASK_BASE` and list what you tried. Inline, the next task starts from a green branch either way.
 
-Write the report to `reports/<n>-<slug>.md` (inline) or the path in your prompt (given a brief). Exactly these `##` headings, in this order, and no other `##` heading anywhere:
+Write the report with the Write tool to `reports/<n>-<slug>.md` (inline) or the path in your prompt (given a brief). Exactly these `##` headings, in this order, and no other `##` heading anywhere:
 
 ```markdown
 ## Branch
@@ -130,7 +132,7 @@ none
 none
 ```
 
-Commits: `git log --oneline $TASK_BASE..HEAD`. One Criteria row per criterion, every row with evidence; an unmet criterion's evidence is the exact failure. No `|` inside a cell. Escalation is `none` or three bullets: `- Unresolved:` the criterion or check with the exact failure, `- Tried:` each attempt in one line, `- Question:` one question whose answer unblocks the task. Validate and fix until it prints `ok`:
+Commits: run `git log --oneline $TASK_BASE..HEAD` as its own call and paste its output into the file; don't capture it in a shell variable. One Criteria row per criterion, every row with evidence; an unmet criterion's evidence is the exact failure. No `|` inside a cell. Escalation is `none` or three bullets: `- Unresolved:` the criterion or check with the exact failure, `- Tried:` each attempt in one line, `- Question:` one question whose answer unblocks the task. Validate and fix until it prints `ok`:
 
 ```bash
 run_state.py check-report <report path>

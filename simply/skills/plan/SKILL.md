@@ -39,12 +39,14 @@ More than 5 tasks: brief the first 5 in run order, list the rest under "Next run
 
 ## Step 1. Planning checkpoint (first plan)
 
-Read `<run>/design.md`, then the files its Approach names and the files they import. Read nothing else unless a task's files are still unknown, and keep raw file contents out of your reply: summarize (rule: `rule-keep-context-lean`). Write this checkpoint in your reply, all four items, each answered (write `n/a: <reason>` rather than dropping one):
+Read `<run>/design.md`, then the files its Approach names and the files they import. Read nothing else unless a task's files are still unknown, and keep raw file contents out of your reply: summarize (rule: `rule-keep-context-lean`). Write this checkpoint in your reply, all six items, each answered (write `n/a: <reason>` rather than dropping one):
 
 1. **Blocking first steps.** Work every other task depends on (a schema change, a shared type, a new package). It gets the lowest task numbers so it runs first.
 2. **Independent workstreams.** Tasks that share no files, don't depend on each other's result, and needn't land together.
 3. **Shared state** (rule: `rule-no-shared-writes`). Anything two tasks would both write (a file, a config, a lockfile, a route table). Split it so each task owns its part; if it can't be split, merge those tasks or order them.
 4. **Smallest decomposition.** Why this many tasks and not fewer. One task is fine: it runs with tdd.
+5. **Interfaces.** Every function, type, route, or file format that one task provides and another uses, with its exact name and signature as the code will spell it, which task provides it, and which tasks use it. A task that uses another's runs after it.
+6. **Size.** Estimate each task's diff: changed lines and files, excluding lockfiles and generated files. Split a task where a reviewer could reject one part and approve the other; fold a task that is only setup (config, scaffolding, a type) into the task whose deliverable needs it. The estimate is a guess written into the brief, not a limit.
 
 A task with more than 7 criteria is too big: split it, or cut criteria that restate another.
 
@@ -54,6 +56,7 @@ Write the criteria before any code exists (rule: `rule-criteria-before-code`). O
 
 - Files and Checks are real paths and real commands from the code you read.
 - Pin every Decision from `design.md` that touches the task in its Constraints, so the executor doesn't remake it.
+- Interfaces and Estimate come from checkpoint items 5 and 6. A Uses of another task's Provides is `task <n>: <that Provides text, verbatim>`; the checker compares the text.
 - Context is the `task` field (`run_state.py get <run> task`), verbatim.
 
 ```bash
@@ -64,16 +67,16 @@ Fix every error it reports and re-run until it exits 0 (it then prints `ok: <n> 
 
 ## Step 3. Ask how to execute (first plan, every run, both modes)
 
-Show the checkpoint and a table `task | goal | Work-in files`. Then ask, and wait for the answer even in auto mode:
+Show the checkpoint and a table `task | goal | Work-in files | estimate`. Then ask, and wait for the answer even in auto mode:
 
 > **TDD** (one agent, tasks in order, one branch, one PR) or **subagents** (one worker per task in parallel worktrees, one PR per task)? I recommend **<choice>**: <one-line reason>.
 
-Recommend `subagents` only when there are 2+ tasks, no two share a Work-in file, and there is no blocking first step; otherwise recommend `tdd`.
+Recommend `subagents` only when there are 2+ tasks, no two share a Work-in file, no task uses another's Provides, and there is no blocking first step; otherwise recommend `tdd`.
 
 ## Step 4. Fit the briefs to the choice (first plan)
 
 - **tdd:** `run_state.py set <run> execute=tdd`.
-- **subagents:** run `check_briefs.py --parallel <run>/tasks/*.md`. On an overlap, merge the overlapping tasks into one brief (renumber, still 7 criteria max) and re-run until it exits 0. If merging leaves one task, tell the user it now runs as tdd and set `execute=tdd`. For every task that touches UI, add `- Dev server port: <3100 + n>` to Constraints so parallel workers never start servers on the same port. Then `run_state.py set <run> execute=subagents pending=<task numbers>`.
+- **subagents:** run `check_briefs.py --parallel <run>/tasks/*.md`. On an overlap or a task that uses another's Provides, merge those tasks into one brief (renumber, still 7 criteria max) and re-run until it exits 0. If merging leaves one task, tell the user it now runs as tdd and set `execute=tdd`. For every task that touches UI, add `- Dev server port: <3100 + n>` to Constraints so parallel workers never start servers on the same port. Then `run_state.py set <run> execute=subagents pending=<task numbers>`.
 
 ## Step 5. Loop plan
 
@@ -81,13 +84,13 @@ Read `<run>/review.md` and `run_state.py get <run> execute` and `run_state.py ge
 
 1. Take only the findings in `review.md`. Never rewrite, renumber, or re-run a task that passed.
 2. Group the findings by branch: the run's `branch` in tdd mode, each failed task's report `## Branch` (in `<run>/reports/`) in subagents mode.
-3. Write one fix brief per branch to `<run>/tasks/<n>-fix-<slug>.md`, with `<n>` continuing after the highest existing task number. Criteria come from the findings, written before code (rule: `rule-criteria-before-code`), each checkable. Constraints starts with `- Fix branch: <branch>` and `- Fixes task <n>: <finding>` for each finding.
+3. Write one fix brief per branch to `<run>/tasks/<n>-fix-<slug>.md`, with `<n>` continuing after the highest existing task number. Criteria come from the findings, written before code (rule: `rule-criteria-before-code`), each checkable. Constraints starts with `- Fix branch: <branch>` and `- Fixes task <n>: <finding>` for each finding. Interfaces are the fixed task's, unless a finding is about one; Estimate is the fix's own size.
 4. Check only the new briefs: `check_briefs.py <run>/tasks/<new n>-*.md` (subagents mode with 2+ fix briefs: add `--parallel`). Fix and re-run until it exits 0.
 5. `run_state.py set <run> pending=<fix task numbers>`. Don't touch `loop`; review owns it.
 
 ## Output
 
-First plan: the checkpoint, the table `task | goal | Work-in files`, the user's choice, `pending`, and "Next run" if tasks were cut.
+First plan: the checkpoint, the table `task | goal | Work-in files | estimate`, the user's choice, `pending`, and "Next run" if tasks were cut.
 
 Loop plan: `loop <n>`, a table `fix task | branch | findings it fixes`, and `pending`.
 

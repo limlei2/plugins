@@ -35,7 +35,7 @@ Hard limits. When one is hit, stop gathering and write the Output with what you 
 Write a brief in the format in [${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md](${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md), adapted for research:
 - **Goal**: the question, one sentence.
 - **Criteria**: the facts the answer needs, each a checkable question ("Does it support SSR?", "Last release date?", "Bundle size of the button component?").
-- **Files**: the single line `- Work in: read-only`. **Checks**: `- none`.
+- **Files**: the single line `- Work in: read-only`. **Interfaces**: `- Uses: none` and `- Provides: none`. **Checks**: `- none`.
 - **Constraints**: the project's stack and limits that matter (read the repo's package files and CLAUDE.md for these), and source preferences.
 
 Show the brief in your reply, then continue without waiting. Ask the user (once, all questions in one message, then wait) only when you cannot write a one-sentence Goal or at least one criterion from the request. If the question implies more than 4 options, pick the 4 with the most GitHub stars or the most usage in the project's ecosystem, and say which you dropped.

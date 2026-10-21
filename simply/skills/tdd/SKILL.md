@@ -75,11 +75,11 @@ Then, per task, record its base: run `git rev-parse --short HEAD`; it prints `<t
 
 ## Step 3. Check the brief
 
-Confirm every listed file exists or is meant to be created, the criteria don't contradict each other, there are 7 criteria or fewer, and each check can run. If the brief is wrong, don't patch around it: write the report with an Escalation (Step 7) and go to the next task (inline) or stop (given a brief). Ambiguity inside a valid brief: take the most literal reading, record it under Assumptions, continue.
+Confirm every listed file exists or is meant to be created, the criteria don't contradict each other, there are 7 criteria or fewer, each check can run, and every Interfaces `Uses:` item exists with that exact name and signature (in the code, or on this branch from an earlier task). If the brief is wrong, don't patch around it: write the report with an Escalation (Step 7) and go to the next task (inline) or stop (given a brief). Ambiguity inside a valid brief: take the most literal reading, record it under Assumptions, continue.
 
 ## Step 4. Red, green, commit, per criterion
 
-Before the first test: follow the project's `CLAUDE.md` and the nearest similar file; remove dead code the change would build on (rule: `rule-delete-first`); reshape the design rather than bolt on (rule: `rule-design-it-in`); validate untrusted input once, at the boundary (rule: `rule-validate-at-the-edges`). Stay inside "Work in"; never edit "Do not touch". A criterion that needs a file outside "Work in" is a wrong brief: escalate.
+Before the first test: follow the project's `CLAUDE.md` and the nearest similar file; remove dead code the change would build on (rule: `rule-delete-first`); reshape the design rather than bolt on (rule: `rule-design-it-in`); validate untrusted input once, at the boundary (rule: `rule-validate-at-the-edges`). Stay inside "Work in"; never edit "Do not touch". A criterion that needs a file outside "Work in" is a wrong brief: escalate. Build every Interfaces `Provides:` item with exactly the name and signature written there: later tasks were briefed against that text.
 
 For each criterion, in brief order:
 1. **Red.** Write one test that asserts what a caller or user observes (rule: `rule-test-what-users-see`). Run it. It must fail, and fail for the reason the criterion names: an assertion on the missing behavior, not an import error, typo, or missing fixture. A test that passes before any code means the criterion is already met or the test is wrong; find out which and record it.
@@ -104,12 +104,15 @@ Check each criterion against the real artifact and record the evidence: command 
 Read `git diff <task base>...HEAD` as a reviewer would:
 - Bugs and unhandled edge cases.
 - Callers of changed code you didn't update (`grep` for every renamed or changed symbol).
+- Every Interfaces `Provides:` item exists with the exact name and signature in the brief.
 - Changes outside the brief's scope.
 - Debug leftovers: `console.log`, `print`, commented-out code, TODOs you added, temp files.
 - Comments that narrate what the code does. Keep only comments that explain a non-obvious why.
 - Layers a reader must trace: one-caller wrappers, needless indirection, mutable state with wide scope (rule: `rule-easy-to-follow`).
 
 Fix what you find, commit, then repeat Step 5. At most 2 review-fix rounds (rule: `rule-bounded-loops`). If the same premise fails twice (the same check, the same criterion), stop: write down the assumption both fixes shared and put it in the Escalation (rule: `rule-question-the-assumption`). Don't try a third fix.
+
+Then compare `git diff --stat <task base>...HEAD` with the brief's Estimate. More than twice the estimated lines: add an Assumption `size: estimated ~<n> lines, actual <m>: <why>`. It is a note for review, not a stop.
 
 ## Step 7. Report and push
 

@@ -71,7 +71,9 @@ A report is a claim, not evidence (rule: `rule-verify-the-real-thing`). For each
    - a criterion with no change that meets it, or with evidence that is not a real command result or file:line ("should work", a suite that never exercises it);
    - any file in `--stat` outside the brief's "Work in" (tdd mode: outside the union of all briefs' "Work in"), or any "Do not touch" file;
    - debug leftovers: `console.log`, `print`, commented-out code, added TODOs, temp files;
-   - bugs, unhandled edge cases, callers of a changed symbol left unchanged (`grep` for each).
+   - bugs, unhandled edge cases, callers of a changed symbol left unchanged (`grep` for each);
+   - an Interfaces `Provides:` item missing or spelled differently from the brief, or a `Uses:` item called with a different signature than its provider built;
+   - a diff more than twice the brief's Estimate with no `size:` Assumption explaining it.
 4. Re-run every command in the brief's Checks yourself on that branch: in the worktree that has it checked out (`git worktree list`), else `git switch <branch>` in a clean main checkout. A failing or skipped Check is a finding. Never weaken a Check to make it pass.
 5. Report `## Escalation` not `none`: if the question is a product or preference decision (naming, UX, scope), collect it as a question for the user (Step 3). Otherwise it is a finding.
 

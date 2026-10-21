@@ -20,6 +20,6 @@ The user reviews after the fact. For reversible work (editing code, writing file
 **Not this:**
 - "Should I add a test for this?" on a task whose criteria need one.
 - "Want me to continue?" after each step.
-- Skipping `/simply:factory`'s Step 3 confirm because this rule says not to block.
+- Skipping `/simply:plan`'s tdd-or-subagents question because this rule says not to block.
 
-**In simply:** `/simply:build` writes the brief and continues without waiting, and records literal readings under Assumptions. Wait points it never overrides: `/simply:factory` Step 3 (confirm before dispatch), `/simply:goodmorning` (wait for the user to pick the first task), `/simply:take` on a mismatch.
+**In simply:** `/simply:brainstorm` records assumptions as Decisions instead of asking; `/simply:tdd` records literal readings under Assumptions. Wait points it never overrides: `/simply:plan`'s tdd-or-subagents question, every prompt-mode pause, `/simply:goodmorning` waiting for the first task, `/simply:take` on a mismatch.

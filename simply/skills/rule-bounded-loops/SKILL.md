@@ -23,4 +23,4 @@ Every loop gets an exact maximum written down before the first iteration. Reachi
 - An escalation that says "it's not working, what should I do?" with no attempts listed.
 - Five questions in one escalation instead of the one that unblocks.
 
-**In simply:** /build Limits and Step 7 (escalate), /factory Limits and Step 6 (1 retry, then the user), /research Limits (3 searches per criterion, then `unknown`), /take Step 4 (stop conditions, no retrying Dead ends).
+**In simply:** `/simply:review` loops back to plan at most 2 times, then escalates; `/simply:tdd` self-review stops after 2 rounds; `/simply:subagents` retries a task once; `/simply:research` stops after 3 searches per criterion; `/simply:take` stops at its listed conditions.

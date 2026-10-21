@@ -22,4 +22,4 @@ When you must stop for the user, the message must be answerable without scrollin
 - An escalation with no error text or attempts listed.
 - Asking a question already answered in the brief's Constraints or the handoff's Decisions.
 
-**In simply:** `/simply:build` Step 7 escalation (Unresolved, Tried, Question) and its 1-message limit; `/simply:factory` Step 6 relays a worker's question verbatim with what was tried; `/simply:goodnight` Step 3 asks once for all missing `next` fields.
+**In simply:** `/simply:brainstorm` asks at most one message; a `/simply:tdd` report's Escalation (Unresolved, Tried, Question); `/simply:review` escalates after loop 2 and sends product questions to the user; `/simply:goodnight` asks once for all missing `next` fields.

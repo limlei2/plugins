@@ -13,7 +13,7 @@ Chat ends when the session does. Anything the next session, another agent, or to
 **Do:**
 - Daily state: `.simply/daily/<YYYY-MM-DD>.md`, checked by `check_log.py`.
 - One task's handoff: `.simply/handoffs/<YYYY-MM-DD-HHMM>-<slug>.md`, checked by `check_handoff.py`.
-- Factory briefs: `.simply/factory/<YYYY-MM-DD-HHMM>-<slug>/<task-slug>.md`, checked by `check_briefs.py`.
+- Pipeline runs: `.simply/runs/<YYYY-MM-DD-HHMM>-<slug>/` (run.md, design.md, tasks/, reports/, review.md), changed only through `run_state.py`.
 - Define each format once in `references/<name>-format.md` with a filled example; the writer and the reader both run the same checker.
 - Write facts true beyond today to `CLAUDE.md`, not to `.simply/`.
 
@@ -22,4 +22,4 @@ Chat ends when the session does. Anything the next session, another agent, or to
 - A handoff pasted into chat instead of written to `.simply/handoffs/`.
 - A reader that parses a file without running its checker first.
 
-**In simply:** `/simply:goodnight` writes and `/simply:goodmorning` reads the daily log; `/simply:give` writes and `/simply:take` reads handoffs; `/simply:factory` writes briefs that `/simply:build` workers execute.
+**In simply:** `/simply:goodnight` writes and `/simply:goodmorning` reads the daily log; `/simply:give` writes and `/simply:take` reads handoffs; the pipeline keeps each run in `.simply/runs/` (run.md, design, tasks, reports, review) through `run_state.py`.

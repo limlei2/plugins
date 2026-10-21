@@ -7,7 +7,7 @@ disable-model-invocation: true
 
 # New Skill
 
-Draft a new skill in `simply/skills/<name>/` from `$ARGUMENTS`. If `$ARGUMENTS` is empty, use the workflow from the current conversation. `/simply:build` is the reference example of the house style; read it before writing.
+Draft a new skill in `simply/skills/<name>/` from `$ARGUMENTS`. If `$ARGUMENTS` is empty, use the workflow from the current conversation. `/simply:tdd` is the reference example of the house style; read it before writing.
 
 **Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
 
@@ -29,7 +29,7 @@ List `simply/skills/`. If an existing skill already covers the job, say which on
 
 **Body, in this order**
 1. `# Title` and one sentence of purpose.
-2. `## Modes`, if it runs both standalone and as a `/simply:factory` worker. The worker mode never asks the user and never spawns agents.
+2. `## Modes`, if it runs both standalone and as a `/simply:subagents` worker. The worker mode never asks the user and never spawns agents. A pipeline stage ends with a `## Hand-off` section in the same shape as `/simply:plan`'s (log, set stage, prompt-mode pause, read the next stage's file).
 3. `## Limits`: a table `Limit | Value | Why` for every count that can run away (rounds, retries, agents, searches, diff size, items in a list). The Why is one line saying what goes wrong past the limit.
 4. Numbered `## Step N.` sections. Exact commands for fragile steps, in fenced `bash` blocks. A check-and-fix loop for anything that can fail.
 5. `## Output`: the exact sections of the final reply.
@@ -40,7 +40,7 @@ List `simply/skills/`. If an existing skill already covers the job, say which on
 - Point at other skills' files with `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/...`, never a relative `../` path.
 - If another skill reads this skill's output, define the format once in `references/<name>-format.md` with a filled-in example, and add `scripts/check_<name>.py` that validates it, with a `--selftest` that checks the example. Both skills run the script.
 - Deterministic work (parsing, validating, comparing state) goes in `scripts/`, not in prose the model re-derives each run. Every script gets a `--selftest` (rule: `rule-script-repeated-work`).
-- Cite the rule a step applies as (rule: `rule-x`) at that step, and include the **Rules** line from `/simply:build` under the title. Pick rules from `${CLAUDE_PLUGIN_ROOT}/skills/rules/SKILL.md`.
+- Cite the rule a step applies as (rule: `rule-x`) at that step, and include the **Rules** line from `/simply:tdd` under the title. Pick rules from `${CLAUDE_PLUGIN_ROOT}/skills/rules/SKILL.md`.
 - Write only what Claude would not already know. Keep the body under 200 lines; move long material to `references/`, linked directly from SKILL.md.
 
 ## Step 4. Check

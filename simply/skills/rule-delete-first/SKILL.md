@@ -21,4 +21,4 @@ Before adding to a system, remove what it no longer needs: dead code, unused exp
 - Commenting code out instead of deleting it; git keeps history.
 - Polishing (naming, docs, tests) code that the same change will delete.
 
-**In simply:** `/simply:build` Step 4 commits each working unit separately, so a removal commit lands before the addition. `/simply:new-skill` Step 2 checks for overlap before adding a skill.
+**In simply:** `/simply:tdd` commits each working unit separately, so a removal commit lands before the addition. `/simply:new-skill` Step 2 checks for overlap before adding a skill.

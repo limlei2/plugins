@@ -21,4 +21,4 @@ The second time you correct the same mistake, stop writing it down and make it i
 - A guardrail saying "keep briefs under 7 criteria" with no checker enforcing it.
 - Keeping the prose rule after the lint already enforces it.
 
-**In simply:** `/simply:goodnight` records repeated corrections as Skill notes, which become checks in a skill's `scripts/`. `check_briefs.py` enforces factory's 7-criteria and no-overlap rules.
+**In simply:** `/simply:goodnight` records repeated corrections as Skill notes, which become checks in a skill's `scripts/`. `check_briefs.py` enforces the 7-criteria and no-overlap rules; `run_state.py` refuses invalid run fields.

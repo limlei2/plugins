@@ -4,28 +4,27 @@ My personal skills for coding. Every skill runs only when you type it: `/simply:
 
 | Skill | Use it to |
 | --- | --- |
-| [`/simply:build`](#simplybuild) | Take one task all the way to one verified PR |
-| [`/simply:factory`](#simplyfactory) | Split work into 2–5 parallel tasks, each done by its own `/build` worker |
+| [`/simply:start`](#the-pipeline) | Run a task through the pipeline: brainstorm → plan → tdd or subagents → review → PR |
 | [`/simply:research`](#simplyresearch) | Research one question online and get one sourced recommendation |
 | [`/simply:goodmorning`](#simplygoodmorning) | Start the day: where we left off, what changed overnight, what to do first |
 | [`/simply:goodnight`](#simplygoodnight) | End the day: save everything tomorrow's session needs |
 | [`/simply:give`](#simplygive) | Hand one in-progress task to a new chat or another agent |
 | [`/simply:take`](#simplytake) | Resume a task someone handed over with `/give` |
 
-Also included: [`/simply:new-skill`](#simplynew-skill).
+The pipeline stages (`brainstorm`, `plan`, `tdd`, `subagents`, `review`) can also be typed on their own. Also included: [`/simply:new-skill`](#simplynew-skill).
 
 ## Before you start
 
 - **Install:** `/plugin marketplace add limlei2/plugins`, then `/plugin install simply@limlei2-plugins`. To try it without installing, start Claude Code with `claude --plugin-dir <path-to>/simply`.
 - **Needs:** `git`, `python3` (for the checker scripts), and `gh` signed in for anything that opens PRs or reads CI.
-- **State lives in `.simply/`** in each project: `daily/` (logs), `handoffs/`, and `factory/` (briefs). Commit it to share logs and handoffs across machines, or add `.simply/` to `.gitignore` to keep them local.
+- **State lives in `.simply/`** in each project: `daily/` (logs), `handoffs/`, and `runs/` (pipeline runs). Commit `daily/` and `handoffs/` to share them across machines, or add `.simply/` to `.gitignore` to keep them local. `runs/` is always kept out of git status automatically, so it never blocks a clean-tree check.
 
 A typical day:
 
 ```
 /simply:goodmorning          → briefing, pick a first task
 /simply:research <question>  → pick a library or approach before building
-/simply:build <task>         → one PR        (or /simply:factory for several at once)
+/simply:start <task>         → brainstorm → plan → build → review → PR
 /simply:give                 → context full? hand off…
 /simply:take <path>          → …and continue in a fresh chat
 /simply:goodnight            → save the day for tomorrow
@@ -33,79 +32,50 @@ A typical day:
 
 ---
 
-## `/simply:build`
+## The pipeline
 
-**One task → one verified PR.** A single agent does everything; it never starts other agents.
-
-```
-/simply:build POST /users should return 400 when name is missing or email has no @
-```
-
-**What happens**
-
-1. **Brief.** It writes a brief: one-sentence goal, a checklist of criteria that define "done", which files it will and won't touch, and the exact check commands. It shows you the brief and keeps going. It asks you (once, in one message) only if it can't work out the goal, a single checkable criterion, or which files to touch.
-2. **Check the brief.** Missing files, contradicting criteria, or checks that can't run → it stops and tells you instead of guessing.
-3. **Branch.** Creates `build/<slug>` from the latest default branch. Your working tree must be clean; it won't stash for you.
-4. **Implement** the smallest change that meets the criteria, committing as it goes (`type(scope): subject`).
-5. **Verify** every criterion on the real thing: UI in the browser (default, empty, loading, error states), APIs with `curl`, data by querying it, CLIs by running them. "Should work" counts as a failure.
-6. **Self-review** the diff like a reviewer: bugs, missed callers, debug leftovers, out-of-scope changes. Fix, re-verify.
-7. **Ship or escalate.** Pushes and opens a ready-for-review PR, or stops and reports what's unresolved, what it tried, and one question for you.
-
-**The PR** has a Conventional Commits title and these sections: Why · What changed · Scope · Verification (criterion → evidence table) · Assumptions.
-
-**Limits**
-
-| Limit | Value |
-| --- | --- |
-| Criteria per brief | 7 |
-| Self-review rounds | 2 (same failure twice → escalate) |
-| Diff size | 400 changed lines, 10 files (bigger → it proposes a `/factory` split) |
-| Questions to you | 1 message, before any code |
-
----
-
-## `/simply:factory`
-
-**Several independent tasks at once.** You plan with the main agent; cheaper worker agents each run `/build` on one task in their own worktree; the main agent checks every result itself.
+**One task, from idea to PR, as a chain of stages.** Each stage is its own skill and hands off to the next by itself.
 
 ```
-/simply:factory add a slugify helper in src/slug.js, and a GET /health endpoint
-/simply:factory research which date library should we use: date-fns, dayjs, or luxon?
+/simply:start [prompt] <task>
+   │
+   ▼
+brainstorm ──► plan ──► you pick: tdd or subagents ──► tdd | subagents ──► review ──► approve → PR(s)
+                ▲                                                            │
+                └────────────── changes needed (max 2 loops, then asks you) ◄┘
 ```
 
-The first word picks the mode: `research`, or `build` (the default).
+```
+/simply:start add rate limiting to POST /login               # auto: runs straight through
+/simply:start prompt add rate limiting to POST /login        # prompt: pauses after every stage
+```
 
-**Before running:** your main checkout must be on the up-to-date default branch, because every worktree branches from it.
+**Two modes**
+- **auto** (default): stages hand off with no pauses.
+- **prompt**: after each stage you get its summary and findings; reply **go** to continue, or say what to change.
 
-**What happens**
+It always stops for three things: choosing tdd or subagents (asked on every run), approving PRs in prompt mode, and the loop limit.
 
-1. **Plan.** It writes a 4-point checkpoint: what must happen first, which tasks are independent, what they'd share, and why this many tasks. If something must land first (a schema change, a shared type), it runs **only that** and stops; run `/factory` again once it merges.
-2. **Briefs.** One brief per task, saved to `.simply/factory/<run>/`, then checked by a script (sections, criteria count, no two tasks touching the same files).
-3. **Confirm.** It shows you the plan and a table of task, class, model, effort, and files, then **waits for you**.
-4. **Dispatch.** All workers start at once.
-5. **Check.** It reads every PR diff against its brief itself; a worker's report isn't trusted as evidence.
-6. **Retry once.** A failed task gets one fresh worker with an exact fix. After that, or for product/preference questions, it asks you.
-7. **Report.** A table of task, model, branch, PR, verdict, and escalations. With 3+ PRs, one reviewer also checks the PRs against each other for conflicts.
+**State:** every run lives in `.simply/runs/<date>-<slug>/`: `run.md` (mode, stage, loop count, chosen mode, pending tasks, a log), `design.md`, `tasks/` (one brief per task), `reports/` (evidence per task), `review.md`. Stages change `run.md` only through `run_state.py`, which refuses invalid values.
 
-**Models used**
-
-| Task | Model | Effort |
+| Stage | What it does | Limits |
 | --- | --- | --- |
-| Hard (auth, payments, secrets, concurrency, migrations, >5 files) | opus | high |
-| Standard | sonnet | medium |
-| Mechanical (renames, copy, config, dependency bumps) | haiku | low |
-| Research worker | sonnet | medium |
-| Cross-PR reviewer | opus | high |
+| `start` | Checks the repo is clean, creates the run, picks auto or prompt | — |
+| `brainstorm` | Reads only the code the task touches; writes `design.md` (goal, approach, decisions with reasons, out of scope, open questions). Decides instead of asking; can run `/simply:research` on one "which library" question | 1 question, 1 research, 60-line design |
+| `plan` | Planning checkpoint (what must land first, what's independent, what's shared), one brief per task with checkable criteria, checked by a script. **Asks you: tdd or subagents**, with a recommendation | 1–5 tasks, 7 criteria each |
+| `tdd` | One agent, one branch (`simply/<slug>`), tasks in order. For each criterion: failing test first, minimal code, green, commit. Verifies on the real surface (browser, curl, query), self-reviews, writes a report per task, pushes | 2 self-review rounds, 400 lines / 10 files per task |
+| `subagents` | One fresh worker per task in its own worktree, all at once; each worker runs `tdd` on its brief. Models by difficulty (opus / sonnet / haiku). Checks every report, retries a task once | 5 workers, 10 agents per run |
+| `review` | The main agent reads every diff against its brief and re-runs the checks itself; writes `review.md`. **approve** → opens PR(s): one for tdd, one per task for subagents. **changes** → back to `plan` with only the fixes | 2 loops, 5 findings per task, 5 PRs |
 
-**Limits:** 2–5 build workers (2–6 research), 1 retry per task, 11 agents total per run (12 for research). More tasks than that → it runs the first batch and lists the rest as "next run".
+**The PR** has a Conventional Commits title and these sections: Why · What changed · Scope · Verification (criterion → evidence, from the reports) · Assumptions.
 
-**Research mode** sends read-only workers out, one per option or question, then combines their findings into one comparison table and one recommendation, with facts kept separate from its own inferences.
+**On a loop**, `plan` writes fix tasks for the review's findings only, reuses your tdd/subagents choice, and the fix lands on the same branch (tdd) or a new worker branch built on the old one (subagents); review then opens the PR from the newest branch.
 
 ---
 
 ## `/simply:research`
 
-**One question, researched online, ending in one recommendation.** A single agent; it never edits files or starts other agents. `/factory research` runs it in parallel, one worker per option.
+**One question, researched online, ending in one recommendation.** A single agent; it never edits files or starts other agents. `/simply:brainstorm` runs it for one which-library question.
 
 ```
 /simply:research which job queue fits this repo: BullMQ, pg-boss, or Graphile Worker?
@@ -126,7 +96,7 @@ The first word picks the mode: `research`, or `build` (the default).
 | --- | --- |
 | Options compared | 4 |
 | Facts per option | 7 for one option; 5 each when comparing 2–4 |
-| Searches + page fetches | 40 (15 as a `/factory` worker) |
+| Searches + page fetches | 40 (20 when brainstorm runs it) |
 | Searches per fact before `unknown` | 3 |
 | Questions to you | 1 message, before searching |
 
@@ -249,7 +219,8 @@ for t in simply/skills/*/scripts/*.py; do python3 "$t" --selftest; done
 
 | Script | Used by | Checks |
 | --- | --- | --- |
-| `factory/scripts/check_briefs.py` | factory | brief sections, criteria count, no file overlap |
+| `start/scripts/run_state.py` | every pipeline stage | creates runs, reads/sets `run.md` fields (validated), logs, checks task reports |
+| `plan/scripts/check_briefs.py` | plan | brief sections, 1–5 tasks, 7 criteria, no file overlap in subagents mode |
 | `goodnight/scripts/check_log.py` | goodnight, goodmorning | daily log format |
 | `goodnight/scripts/recent_sessions.py` | goodnight | today's other sessions |
 | `give/scripts/check_handoff.py` | give, take | handoff format |

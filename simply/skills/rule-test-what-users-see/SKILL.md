@@ -24,4 +24,4 @@ Behavior is what a caller, end user, or external service can observe: return val
 - Expected value computed by calling the function under test.
 - A snapshot of an entire component tree for a change to one label.
 
-**In simply:** /build Step 4 (tests written for a criterion) and Step 5 (a green suite counts only if a test exercises the criterion), brief Criteria like "A test covers each behavior above".
+**In simply:** `/simply:tdd` writes each criterion's failing test first and counts a green suite only if a test exercises the criterion; brief Criteria like "A test covers each behavior above".

@@ -83,9 +83,12 @@ Use exactly these sections, in order, so brainstorm can read them:
 
 ## Sources
 - <url> — <what it supported>
+
+## Recommendation
+<exactly one pick, the 2–3 findings that decide it, and the one fact that would change the pick>
 ```
 
-End with a `## Recommendation` section: exactly one pick, the 2–3 findings that decide it, and the one fact that would change the pick. Never recommend "it depends" without naming the pick for this project.
+Never recommend "it depends" without naming the pick for this project.
 
 ## Guardrails
 

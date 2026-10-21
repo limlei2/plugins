@@ -111,7 +111,7 @@ Plan the PRs: tdd mode, one PR from `branch`; subagents mode, one PR per worker 
 
 For each branch:
 
-1. Tidy history: squash fixup commits into the commit they fix (`git rebase -i` is unavailable, so run `git merge-base HEAD origin/<default>`, then `git reset --soft <that commit>`, and recommit). 5 commits max, each landable and in order.
+1. Tidy history: a branch with fixup commits ships as one commit, since `git rebase -i` is unavailable. Run `git merge-base HEAD origin/<default>` (prints `<base>`), then `git reset --soft <base>`, then one `git commit` titled like the PR. A branch without fixups keeps its commits.
 2. Push and open the PR ready for review, never as a draft, never with a failing Check:
    ```bash
    git push -u origin <branch>

@@ -1,0 +1,31 @@
+{
+  "skill_name": "plan",
+  "evals": [
+    {
+      "id": 1,
+      "name": "done-command",
+      "prompt": "add a done command to the todo cli so i can mark an item finished by its number, and list should show [x] next to done ones",
+      "expected_output": "The plan stage of a run for this task, run via /simply:start in auto mode. Fixture: a clean git repo with todo.py (add/list CLI storing todos.json), test_todo.py (unittest), CLAUDE.md; no remote.",
+      "files": [],
+      "expectations": [
+        "check_briefs.py on <run>/tasks/*.md exits 0",
+        "1 to 5 briefs exist and none has more than 7 criteria",
+        "run.md pending lists every brief's task number",
+        "the final reply asks TDD or subagents with one recommendation and a reason, and no branch or code change was made"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "corrupt-json-recovery",
+      "prompt": "the app crashes with a JSONDecodeError if todos.json gets corrupted. make it not crash - keep the broken file around so i dont lose stuff, and start with an empty list",
+      "expected_output": "The plan stage of a run for this task, run via /simply:start in auto mode. Fixture: a clean git repo with todo.py (add/list CLI storing todos.json), test_todo.py (unittest), CLAUDE.md; no remote.",
+      "files": [],
+      "expectations": [
+        "check_briefs.py on <run>/tasks/*.md exits 0",
+        "1 to 5 briefs exist and none has more than 7 criteria",
+        "run.md pending lists every brief's task number",
+        "the final reply asks TDD or subagents with one recommendation and a reason, and no branch or code change was made"
+      ]
+    }
+  ]
+}

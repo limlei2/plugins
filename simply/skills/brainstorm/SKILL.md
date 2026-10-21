@@ -12,9 +12,7 @@ Settle intent before planning: one goal, one approach, every decision written do
 
 **Plugin root:** if `${CLAUDE_PLUGIN_ROOT}` appears literally in this file (you opened it with Read during a hand-off, so nothing filled it in), it means the folder two levels above this `SKILL.md`, e.g. `/…/simply` for `/…/simply/skills/plan/SKILL.md`. Substitute that absolute path everywhere below before running any command; the shell does not set this variable.
 
-```bash
-RS="${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py"   # path only, so "$RS" works in bash and zsh; each Bash call starts fresh, so repeat this line
-```
+`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. An angle-bracket value (`<run>`, `<repo root>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
 
 **Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
 
@@ -28,13 +26,14 @@ RS="${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py"   # path only, so "
 
 ## Step 1. Find the run
 
-Handed off from `/simply:start`: use its `$RUN`. Typed directly:
+Handed off from `/simply:start`: use its `<run>`. Typed directly:
 
 ```bash
-RUN=$("$RS" latest "$(git rev-parse --show-toplevel)")
+git rev-parse --show-toplevel          # prints <repo root>
+run_state.py latest <repo root>        # prints <run>
 ```
 
-No run: stop and tell the user to run `/simply:start <task>`. Read the task with `"$RS" get "$RUN" task`.
+No run: stop and tell the user to run `/simply:start <task>`. Read the task with `run_state.py get <run> task`.
 
 ## Step 2. Read the code
 
@@ -77,8 +76,8 @@ Every assumption from Step 3 is a Decision. Prefer the approach that deletes or 
 ## Step 5. Check
 
 ```bash
-wc -l < "$RUN/design.md"                       # 60 max
-grep -c '^## ' "$RUN/design.md"                # exactly 5
+wc -l <run>/design.md                         # 60 max
+grep -c '^## ' <run>/design.md                # exactly 5
 ```
 
 Over 60 lines: cut detail that belongs in a brief. Fix and re-run until both hold.
@@ -93,8 +92,8 @@ Over 60 lines: cut detail that belongs in a brief. Fix and re-run until both hol
 
 ## Hand-off
 
-1. `"$RS" log "$RUN" "brainstorm: <n> decisions, <n> open questions"` and `"$RS" set "$RUN" stage=plan`.
-2. `"$RS" get "$RUN" mode`. If `prompt`: send the Output above and end with "Reply **go** to continue to plan, or tell me what to change." Wait. If the user asks for changes, apply them to `design.md`, re-run Step 5, and summarize again.
+1. `run_state.py log <run> "brainstorm: <n> decisions, <n> open questions"` and `run_state.py set <run> stage=plan`.
+2. `run_state.py get <run> mode`. If `prompt`: send the Output above and end with "Reply **go** to continue to plan, or tell me what to change." Wait. If the user asks for changes, apply them to `design.md`, re-run Step 5, and summarize again.
 3. If `auto`, or after **go**: read and follow `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md`.
 
 ## Guardrails

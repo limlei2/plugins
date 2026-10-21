@@ -13,9 +13,7 @@ Open a pipeline run for one task and hand it to brainstorm. The run's state live
 
 Pipeline: start → brainstorm → plan → tdd | subagents → review → approve (PRs open) or changes → back to plan, at most 2 loops, then escalate. The run folder and `run.md` fields are defined in `${CLAUDE_PLUGIN_ROOT}/skills/start/references/run-format.md`. Every state change goes through `run_state.py`; never edit `run.md` by hand.
 
-```bash
-RS="${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py"   # path only, so "$RS" works in bash and zsh; each Bash call starts fresh, so repeat this line
-```
+`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. An angle-bracket value (`<run>`, `<repo root>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
 
 **Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
 
@@ -36,18 +34,18 @@ Empty task: ask once "What should this run build?" and wait. Use the reply as th
 ## Step 2. Check the repo
 
 ```bash
-ROOT=$(git rev-parse --show-toplevel) || { echo "not a git repo"; exit 1; }
-test -z "$(git -C "$ROOT" status --porcelain -- . ':!.simply')" || { echo "dirty tree"; exit 1; }
+git rev-parse --show-toplevel                              # prints <repo root>
+git -C <repo root> status --porcelain -- . ':!.simply'     # must print nothing
 ```
 
-- Not a git repo: stop. Tell the user the pipeline needs a git repository.
-- Dirty tree: stop. Tell the user to commit or stash first, and list the changed files from `git status --porcelain -- . ':!.simply'`. Don't stash for them. `.simply/` is left out on purpose: uncommitted daily logs and handoffs are normal and don't touch code.
+- First command fails (not a git repo): stop. Tell the user the pipeline needs a git repository.
+- Second command prints anything (dirty tree): stop. Tell the user to commit or stash first, and list the files it printed. Don't stash for them. `.simply/` is left out on purpose: uncommitted daily logs and handoffs are normal and don't touch code.
 
 ## Step 3. Create the run
 
 ```bash
-RUN=$("$RS" new "$ROOT" <auto|prompt> "<task>")
-"$RS" check "$RUN"
+run_state.py new <repo root> <auto|prompt> "<task>"     # prints <run>
+run_state.py check <run>
 ```
 
 `new` writes `run.md` with `stage=brainstorm`, `loop=0`, `execute=none`, `pending=none`, and the task verbatim. If `check` prints errors, stop and show them; don't patch `run.md`.
@@ -55,7 +53,7 @@ RUN=$("$RS" new "$ROOT" <auto|prompt> "<task>")
 ## Output
 
 One short block, nothing else:
-- **Run:** the `$RUN` path.
+- **Run:** the `<run>` path.
 - **Mode:** `auto` or `prompt`.
 - **Next:** brainstorm writes `design.md`, then plan writes the task briefs and asks you to choose tdd or subagents, then the tasks run and get reviewed before any PR opens.
 - Prompt mode only: "I'll pause after each stage and wait for your **go**."

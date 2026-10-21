@@ -13,7 +13,7 @@ Dispatch one fresh worker per pending brief, in parallel, and collect a valid re
 
 **Plugin root:** if `${CLAUDE_PLUGIN_ROOT}` appears literally in this file (you opened it with Read during a hand-off, so nothing filled it in), it means the folder two levels above this `SKILL.md`, e.g. `/…/simply` for `/…/simply/skills/plan/SKILL.md`. Substitute that absolute path everywhere below before running any command; the shell does not set this variable.
 
-`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. Run folder and report format: `${CLAUDE_PLUGIN_ROOT}/skills/start/references/run-format.md`. Find the run with `run_state.py latest "$(git rev-parse --show-toplevel)"` unless the previous stage named it.
+`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. Run folder and report format: `${CLAUDE_PLUGIN_ROOT}/skills/start/references/run-format.md`. Find the run with `git rev-parse --show-toplevel` (prints `<repo root>`), then `run_state.py latest <repo root>` (prints `<run>`), unless the previous stage named it. An angle-bracket value (`<run>`, `<repo root>`, `<default>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
 
 **Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
 
@@ -50,19 +50,19 @@ Classify each brief by the first rule that matches:
 ## Step 1. Read the run
 
 ```bash
-RUN=<run folder>
-run_state.py set "$RUN" stage=execute execute=subagents
-run_state.py get "$RUN" pending    # e.g. 1,2,3; `none` means stop: nothing to run, tell the user to run /simply:plan
+run_state.py set <run> stage=execute execute=subagents
+run_state.py get <run> pending    # e.g. 1,2,3 (none means stop: nothing to run, tell the user to run /simply:plan)
 ```
 
-For each pending `<n>`, the brief is `$RUN/tasks/<n>-<slug>.md` and the report path is `$RUN/reports/<n>-<slug>.md`. Read each brief's Files and Constraints only, enough to classify it (rule: `rule-keep-context-lean`).
+For each pending `<n>`, the brief is `<run>/tasks/<n>-<slug>.md` and the report path is `<run>/reports/<n>-<slug>.md`. Read each brief's Files and Constraints only, enough to classify it (rule: `rule-keep-context-lean`).
 
 ## Step 2. Check the base
 
 Worktrees branch from the main checkout's current commit, so it must be on the default branch and up to date:
 
 ```bash
-git fetch origin && git status -sb | head -1   # expect: ## <default>...origin/<default> with no ahead/behind
+git fetch origin
+git status -sb       # first line, expect: ## <default>...origin/<default> with no ahead/behind
 ```
 
 If it's on another branch, or behind, stop and tell the user. A fix task whose Constraints name a branch is fine: its worker pulls that branch itself.
@@ -80,10 +80,10 @@ Spawn every worker in a single message, one Agent call per task, with the values
 Wait for every worker. For each task:
 
 ```bash
-test -f "$RUN/reports/<n>-<slug>.md" && run_state.py check-report "$RUN/reports/<n>-<slug>.md"
+run_state.py check-report <run>/reports/<n>-<slug>.md
 ```
 
-A task needs a retry when the report is missing, `check-report` fails, or its `## Escalation` is not `none`. Read only the report, never the diff; don't judge the code.
+A missing report makes `check-report` fail with a file-not-found error. A task needs a retry when the report is missing, `check-report` fails, or its `## Escalation` is not `none`. Read only the report, never the diff; don't judge the code.
 
 ## Step 5. Retry once
 

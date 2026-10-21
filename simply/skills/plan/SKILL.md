@@ -12,16 +12,13 @@ Turn the design into task briefs a cheap executor can follow without remaking a 
 
 **Plugin root:** if `${CLAUDE_PLUGIN_ROOT}` appears literally in this file (you opened it with Read during a hand-off, so nothing filled it in), it means the folder two levels above this `SKILL.md`, e.g. `/…/simply` for `/…/simply/skills/plan/SKILL.md`. Substitute that absolute path everywhere below before running any command; the shell does not set this variable.
 
-```bash
-RS="${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py"   # path only, so "$RS" works in bash and zsh; each Bash call starts fresh, so repeat this line
-CB="${CLAUDE_PLUGIN_ROOT}/skills/plan/scripts/check_briefs.py"
-```
+`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`, and `check_briefs.py` means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/plan/scripts/check_briefs.py`. An angle-bracket value (`<run>`, `<repo root>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
 
 **Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
 
 ## Modes
 
-Find the run first. Handed off: use its `$RUN`. Typed directly: `RUN=$("$RS" latest "$(git rev-parse --show-toplevel)")`; no run means stop and tell the user to run `/simply:start <task>`. Then `"$RS" get "$RUN" loop`:
+Find the run first. Handed off: use its `<run>`. Typed directly: run `git rev-parse --show-toplevel` (prints `<repo root>`), then `run_state.py latest <repo root>` (prints `<run>`); no run means stop and tell the user to run `/simply:start <task>`. Then `run_state.py get <run> loop`:
 
 - **First plan** (`loop` is `0`): Steps 1-4.
 - **Loop plan** (`loop` is `1` or `2`; review found changes and already incremented it): Step 5 only.
@@ -42,7 +39,7 @@ More than 5 tasks: brief the first 5 in run order, list the rest under "Next run
 
 ## Step 1. Planning checkpoint (first plan)
 
-Read `$RUN/design.md`, then the files its Approach names and the files they import. Read nothing else unless a task's files are still unknown, and keep raw file contents out of your reply: summarize (rule: `rule-keep-context-lean`). Write this checkpoint in your reply, all four items, each answered (write `n/a: <reason>` rather than dropping one):
+Read `<run>/design.md`, then the files its Approach names and the files they import. Read nothing else unless a task's files are still unknown, and keep raw file contents out of your reply: summarize (rule: `rule-keep-context-lean`). Write this checkpoint in your reply, all four items, each answered (write `n/a: <reason>` rather than dropping one):
 
 1. **Blocking first steps.** Work every other task depends on (a schema change, a shared type, a new package). It gets the lowest task numbers so it runs first.
 2. **Independent workstreams.** Tasks that share no files, don't depend on each other's result, and needn't land together.
@@ -53,17 +50,17 @@ A task with more than 7 criteria is too big: split it, or cut criteria that rest
 
 ## Step 2. Write and check the briefs (first plan)
 
-Write the criteria before any code exists (rule: `rule-criteria-before-code`). One brief per task in the format in `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md`, to `$RUN/tasks/<n>-<slug>.md`: `<n>` is the run order 1..5, blocking work first; `<slug>` is 2-4 lowercase words from the task's Goal, hyphenated.
+Write the criteria before any code exists (rule: `rule-criteria-before-code`). One brief per task in the format in `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md`, to `<run>/tasks/<n>-<slug>.md`: `<n>` is the run order 1..5, blocking work first; `<slug>` is 2-4 lowercase words from the task's Goal, hyphenated.
 
 - Files and Checks are real paths and real commands from the code you read.
 - Pin every Decision from `design.md` that touches the task in its Constraints, so the executor doesn't remake it.
-- Context is the `task` field (`"$RS" get "$RUN" task`), verbatim.
+- Context is the `task` field (`run_state.py get <run> task`), verbatim.
 
 ```bash
-"$CB" "$RUN"/tasks/*.md
+check_briefs.py <run>/tasks/*.md
 ```
 
-Fix every error it reports and re-run until it prints nothing and exits 0. Then `"$RS" set "$RUN" pending=<all task numbers, comma-separated>`.
+Fix every error it reports and re-run until it prints nothing and exits 0. Then `run_state.py set <run> pending=<all task numbers, comma-separated>`.
 
 ## Step 3. Ask how to execute (first plan, every run, both modes)
 
@@ -75,18 +72,18 @@ Recommend `subagents` only when there are 2+ tasks, no two share a Work-in file,
 
 ## Step 4. Fit the briefs to the choice (first plan)
 
-- **tdd:** `"$RS" set "$RUN" execute=tdd`.
-- **subagents:** run `"$CB" --parallel "$RUN"/tasks/*.md`. On an overlap, merge the overlapping tasks into one brief (renumber, still 7 criteria max) and re-run until it exits 0. If merging leaves one task, tell the user it now runs as tdd and set `execute=tdd`. For every task that touches UI, add `- Dev server port: <3100 + n>` to Constraints so parallel workers never start servers on the same port. Then `"$RS" set "$RUN" execute=subagents pending=<task numbers>`.
+- **tdd:** `run_state.py set <run> execute=tdd`.
+- **subagents:** run `check_briefs.py --parallel <run>/tasks/*.md`. On an overlap, merge the overlapping tasks into one brief (renumber, still 7 criteria max) and re-run until it exits 0. If merging leaves one task, tell the user it now runs as tdd and set `execute=tdd`. For every task that touches UI, add `- Dev server port: <3100 + n>` to Constraints so parallel workers never start servers on the same port. Then `run_state.py set <run> execute=subagents pending=<task numbers>`.
 
 ## Step 5. Loop plan
 
-Read `$RUN/review.md` and `"$RS" get "$RUN" execute` and `"$RS" get "$RUN" branch`. Reuse the execute choice; never ask again.
+Read `<run>/review.md` and `run_state.py get <run> execute` and `run_state.py get <run> branch`. Reuse the execute choice; never ask again.
 
 1. Take only the findings in `review.md`. Never rewrite, renumber, or re-run a task that passed.
-2. Group the findings by branch: the run's `branch` in tdd mode, each failed task's report `## Branch` (in `$RUN/reports/`) in subagents mode.
-3. Write one fix brief per branch to `$RUN/tasks/<n>-fix-<slug>.md`, with `<n>` continuing after the highest existing task number. Criteria come from the findings, written before code (rule: `rule-criteria-before-code`), each checkable. Constraints starts with `- Fix branch: <branch>` and `- Fixes task <n>: <finding>` for each finding.
-4. Check only the new briefs: `"$CB" "$RUN"/tasks/<new n>-*.md` (subagents mode with 2+ fix briefs: add `--parallel`). Fix and re-run until it exits 0.
-5. `"$RS" set "$RUN" pending=<fix task numbers>`. Don't touch `loop`; review owns it.
+2. Group the findings by branch: the run's `branch` in tdd mode, each failed task's report `## Branch` (in `<run>/reports/`) in subagents mode.
+3. Write one fix brief per branch to `<run>/tasks/<n>-fix-<slug>.md`, with `<n>` continuing after the highest existing task number. Criteria come from the findings, written before code (rule: `rule-criteria-before-code`), each checkable. Constraints starts with `- Fix branch: <branch>` and `- Fixes task <n>: <finding>` for each finding.
+4. Check only the new briefs: `check_briefs.py <run>/tasks/<new n>-*.md` (subagents mode with 2+ fix briefs: add `--parallel`). Fix and re-run until it exits 0.
+5. `run_state.py set <run> pending=<fix task numbers>`. Don't touch `loop`; review owns it.
 
 ## Output
 
@@ -96,15 +93,15 @@ Loop plan: `loop <n>`, a table `fix task | branch | findings it fixes`, and `pen
 
 ## Hand-off
 
-1. `"$RS" log "$RUN" "plan: <n> tasks, user chose <execute>"` (loop plan: `"plan: loop <n>, <n> fix tasks"`) and `"$RS" set "$RUN" stage=execute`.
-2. `"$RS" get "$RUN" mode`. If `prompt`: send the Output above and end with "Reply **go** to continue to <tdd or subagents>, or tell me what to change." Wait. If the user asks for changes, apply them, re-run the checker for this entry, and summarize again.
-3. If `auto`, or after **go**: `"$RS" get "$RUN" execute`, then read and follow `${CLAUDE_PLUGIN_ROOT}/skills/tdd/SKILL.md` if `tdd`, or `${CLAUDE_PLUGIN_ROOT}/skills/subagents/SKILL.md` if `subagents`.
+1. `run_state.py log <run> "plan: <n> tasks, user chose <execute>"` (loop plan: `"plan: loop <n>, <n> fix tasks"`) and `run_state.py set <run> stage=execute`.
+2. `run_state.py get <run> mode`. If `prompt`: send the Output above and end with "Reply **go** to continue to <tdd or subagents>, or tell me what to change." Wait. If the user asks for changes, apply them, re-run the checker for this entry, and summarize again.
+3. If `auto`, or after **go**: `run_state.py get <run> execute`, then read and follow `${CLAUDE_PLUGIN_ROOT}/skills/tdd/SKILL.md` if `tdd`, or `${CLAUDE_PLUGIN_ROOT}/skills/subagents/SKILL.md` if `subagents`.
 
 ## Guardrails
 
 - Never hand off with briefs that fail the checker, or in subagents mode with briefs that fail `--parallel`.
 - Never hand off before the user has chosen tdd or subagents on the first plan, even in auto mode.
 - Never give two subagents tasks the same Work-in file; merge them instead.
-- Never write code, create branches, or edit files outside `$RUN` here.
+- Never write code, create branches, or edit files outside `<run>` here.
 - Never increment `loop` or decide to escalate; review does both.
 - Never edit `run.md` by hand; all state goes through `run_state.py`.

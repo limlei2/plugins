@@ -99,9 +99,6 @@ Loop plan: `loop <n>`, a table `fix task | branch | findings it fixes`, and `pen
 
 ## Guardrails
 
-- Never hand off with briefs that fail the checker, or in subagents mode with briefs that fail `--parallel`.
-- Never hand off before the user has chosen tdd or subagents on the first plan, even in auto mode.
-- Never give two subagents tasks the same Work-in file; merge them instead.
-- Never write code, create branches, or edit files outside `<run>` here.
-- Never increment `loop` or decide to escalate; review does both.
-- Never edit `run.md` by hand; all state goes through `run_state.py`.
+- Never write code, create branches, or edit files outside `<run>` here: execute owns the branch, and edits here skip the briefs' checks.
+- Never increment `loop` or decide to escalate: review owns both, and two writers would miscount the 2-loop cap.
+- Never edit `run.md` by hand: `run_state.py` validates every field, and a hand edit skips that check.

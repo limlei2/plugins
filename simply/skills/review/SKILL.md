@@ -146,9 +146,5 @@ Read `loop`.
 
 ## Guardrails
 
-- Never spawn a reviewer or any subagent; the main agent reviews.
-- Never pass a report's claim through as your verdict; every verdict comes from the diff and Checks you re-ran.
-- Never edit a task's code yourself. Findings go back to plan.
-- Never approve with a failing or skipped Check, an open question, or a criterion without real evidence.
-- Never open a PR as a draft, or push before **go** in prompt mode.
-- Never loop a third time, and never loop a question that needs the user.
+- Never edit a task's code yourself: send findings back to plan; a reviewer's own fix goes unreviewed.
+- Never approve with a failing or skipped Check, an open question, or a criterion without real evidence: approve opens PRs, and other people act on them.

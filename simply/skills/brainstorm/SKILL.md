@@ -98,7 +98,5 @@ Over 60 lines: cut detail that belongs in a brief. Fix and re-run until both hol
 
 ## Guardrails
 
-- Never write task briefs, branches, or code here; that is plan's and execute's job.
-- Never ask more than one message of questions, or ask what the code already answers.
-- Never leave a Decision without its why.
-- Never research more than one question; the rest go to Open questions with a default.
+- Never write task briefs, branches, or code here: briefs need a settled design, and code needs briefs.
+- Never leave a Decision without its why: plan can't tell a choice from an accident without it.

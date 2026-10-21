@@ -23,4 +23,4 @@ Done means you observed the real thing doing the right thing. Run the feature on
 - "Should work", "inconclusive", or a check on a different surface, reported as a pass.
 - Forwarding a worker's "done" as your verdict without reading its diff.
 
-**In simply:** /build Step 5 (verify each criterion) and Step 7 (Verification table), /factory Step 5 (check each result yourself), /research Step 3 (second source for deciding facts), /take Step 2 (verify state before trusting the handoff).
+**In simply:** `/simply:tdd` verifies each criterion on the real surface and records it in the report; `/simply:review` reads every diff and re-runs the Checks itself; `/simply:research` Step 3 (second source for deciding facts); `/simply:take` Step 2 (verify state before trusting the handoff).

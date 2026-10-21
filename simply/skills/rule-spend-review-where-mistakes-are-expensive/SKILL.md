@@ -22,4 +22,4 @@ Review effort follows the cost of being wrong, not the size of the diff. A renam
 - An opus full review of a dependency bump.
 - Merging a migration because the migration command exited 0.
 
-**In simply:** `/simply:factory`'s Models table and classification rules, and its cross-PR reviewer on `opus`/`high`. `/simply:build` Step 5 checks data changes by querying, not by exit code.
+**In simply:** `/simply:subagents`' Models table and hard/standard/mechanical classification. `/simply:tdd` verifies data changes by querying, not by exit code; `/simply:review` re-runs every brief's Checks itself.

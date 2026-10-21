@@ -22,4 +22,4 @@ Each unit is a bracket: known-good state, one change, run the check, then move o
 - "I'll fix the type errors after the rest of the migration is in."
 - A commit that leaves the build broken because the next commit repairs it.
 
-**In simply:** /build Step 4 (commit after each working unit, checks green) and Step 7 (each of the 5 max commits landable, in order), /factory Step 1 (blocking first step ships alone before the parallel run).
+**In simply:** `/simply:tdd` commits after each red→green cycle with checks passing; `/simply:plan` orders blocking work first so each task lands on a green base.

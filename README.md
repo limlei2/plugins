@@ -12,8 +12,8 @@ Full usage guide: **[simply/README.md](simply/README.md)**.
 
 | Skill | What it does |
 | --- | --- |
-| `/simply:build` | One task → one verified PR |
-| `/simply:factory` | 2–5 parallel `/build` workers (or `research` workers), checked and reported |
+| `/simply:start [prompt] <task>` | Pipeline: brainstorm → plan → tdd or subagents → review → PR(s); auto or pause-after-each-stage |
+| `brainstorm`, `plan`, `tdd`, `subagents`, `review` | The pipeline stages; each hands off to the next, and each can be typed on its own |
 | `/simply:research` | One question researched online, sourced, with one recommendation |
 | `/simply:goodmorning` | Start of day: reads last night's log, checks it against git/PRs/CI, suggests a first task |
 | `/simply:goodnight` | End of day: writes the daily log and saves lasting facts to `CLAUDE.md` |
@@ -22,7 +22,7 @@ Full usage guide: **[simply/README.md](simply/README.md)**.
 | `/simply:new-skill` | Drafts a new skill in the house style |
 | `rules` + 21 `rule-*` | Working rules the skills cite at each step; see the guide |
 
-The skills write their state to `.simply/` in each project (`daily/`, `handoffs/`, `factory/`). Commit it to share logs and handoffs across machines, or add `.simply/` to the project's `.gitignore` to keep them local.
+The skills write their state to `.simply/` in each project (`daily/`, `handoffs/`, `runs/`). Commit it to share logs and handoffs across machines, or add `.simply/` to the project's `.gitignore` to keep them local.
 
 ## Layout
 

@@ -23,4 +23,4 @@ Before the first edit, write down what done looks like as a list of statements, 
 - Writing the criteria after the code, by describing what the code does.
 - Adding a criterion mid-implementation because something extra seemed nice.
 
-**In simply:** /build Step 1 (brief Criteria) and Step 2 (each check can run), /factory Steps 1-2 (7 criteria max per brief, checked by `check_briefs.py`), /research Step 1 (criteria as checkable questions), the format in `${CLAUDE_PLUGIN_ROOT}/skills/build/references/brief.md`.
+**In simply:** `/simply:plan` writes Criteria into every brief before `/simply:tdd` writes code (7 max, checked by `check_briefs.py`); `/simply:tdd` turns each criterion into a failing test first; `/simply:research` Step 1 writes criteria as checkable questions; the format is `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md`.

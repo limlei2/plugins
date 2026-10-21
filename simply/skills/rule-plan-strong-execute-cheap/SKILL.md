@@ -23,4 +23,4 @@ Judgment goes into the plan, done once by the strongest model. Workers on cheape
 - A worker weakening a check so it can pass.
 - The planner editing the worker's PR instead of re-briefing.
 
-**In simply:** `/simply:factory` plans and briefs; `/simply:build` in given-a-brief mode executes and escalates at Step 2 or Step 7; factory Step 6 retries once with a fresh worker and a `## Fix` section.
+**In simply:** `/simply:plan` writes the briefs; `/simply:subagents` workers follow `/simply:tdd` in given-a-brief mode and escalate in their report instead of rewriting the brief; a retry gets a fresh worker with a `## Fix` section.

@@ -22,4 +22,4 @@ The main thread's context is for planning, deciding, and checking. Bulk reading 
 - Reading the whole repo "for context" before planning.
 - Pasting every worker's full report into the main thread instead of a verdict line.
 
-**In simply:** `/simply:factory` Step 1 reads only named files, and Step 5 keeps a one-line verdict per task. `/simply:research` workers return findings, not pages. `recent_sessions.py` in `/simply:goodnight` returns a first request and last reply, not transcripts.
+**In simply:** `/simply:brainstorm` reads only the named files and their imports; `/simply:subagents` keeps one line per worker; `/simply:research` returns findings, not pages; `recent_sessions.py` in `/simply:goodnight` returns a first request and last reply, not transcripts.

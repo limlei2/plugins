@@ -1,6 +1,6 @@
 # The brief
 
-A brief is the contract for one task. `/simply:build` executes one; `/simply:factory` writes one per worker. Plan with a strong model, execute with a cheap one: the worker never rewrites the brief.
+A brief is the contract for one task. `/simply:plan` writes one per task; `/simply:tdd` executes them, directly or as a `/simply:subagents` worker. Plan with a strong model, execute with a cheap one: the worker never rewrites the brief.
 
 ## Format
 
@@ -29,7 +29,7 @@ A brief is the contract for one task. `/simply:build` executes one; `/simply:fac
 
 - Every criterion is checkable against the real artifact: a command's output, a file's content, a behavior you can trigger. "Clean code" is not a criterion.
 - Checks are exact commands that run from the repo root. If the repo has none, say `none` and make the criteria carry the verification.
-- Files lists both sides. Two briefs in one factory run never share a "Work in" path.
+- Files lists both sides. In subagents mode, two briefs never share a "Work in" path (`check_briefs.py --parallel` enforces it).
 - Constraints records every decision the planner made so the worker doesn't remake it.
 
 ## Example

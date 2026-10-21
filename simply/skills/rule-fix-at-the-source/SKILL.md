@@ -24,4 +24,4 @@ The symptom is where a bad state became visible; the root cause is the first dec
 - Clamping an out-of-range value at render time instead of where it was computed.
 - A workaround that needs a paragraph of comment to justify it.
 
-**In simply:** /build Step 5 (when a check fails) and Step 6 (self-review fixes); rule-question-the-assumption takes over after 2 failed fixes on one premise.
+**In simply:** `/simply:tdd` when a check fails during verify or self-review; `rule-question-the-assumption` takes over after 2 failed fixes on one premise.

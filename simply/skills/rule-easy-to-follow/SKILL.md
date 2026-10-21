@@ -22,4 +22,4 @@ Code is as hard as the work a reader does to understand it. Count two things: la
 - A module-level mutable cache read by 6 functions.
 - Storing `isEmpty` next to `items` and updating both.
 
-**In simply:** `/simply:build` Step 6 self-review reads the diff for this. Its agent-side twin is `rule-keep-context-lean`.
+**In simply:** `/simply:tdd` self-review and `/simply:review` read the diff for this. Its agent-side twin is `rule-keep-context-lean`.

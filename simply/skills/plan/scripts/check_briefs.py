@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
-"""Check /simply:factory briefs: required sections present, Criteria non-empty,
-no two briefs sharing a "Work in" path. Exit 1 with one line per error."""
+"""Check /simply:plan task briefs: required sections present, 1-7 criteria, 1-5 tasks.
+With --parallel (subagents mode): 2-5 tasks and no two sharing a "Work in" path.
+Exit 1 with one line per error."""
 import re
 import sys
 from pathlib import Path
@@ -30,8 +31,9 @@ def overlaps(a, b):
     return a == b or a.startswith(b + "/") or b.startswith(a + "/") or not a or not b
 
 
-def check(paths, max_briefs=5, max_criteria=7, min_briefs=2):
+def check(paths, parallel=False, max_briefs=5, max_criteria=7):
     errors, claims = [], []
+    min_briefs = 2 if parallel else 1
     if not min_briefs <= len(paths) <= max_briefs:
         errors.append(f"{len(paths)} briefs; a run needs {min_briefs} to {max_briefs}")
     for p in paths:
@@ -47,7 +49,7 @@ def check(paths, max_briefs=5, max_criteria=7, min_briefs=2):
         if s.get("Files") and "Work in:" not in s["Files"]:
             errors.append(f"{p}: Files has no 'Work in:' line")
         claims += [(p, w) for w in work_in(s.get("Files", ""))]
-    for i, (p1, w1) in enumerate(claims):
+    for i, (p1, w1) in enumerate(claims if parallel else []):
         for p2, w2 in claims[i + 1:]:
             if p1 != p2 and overlaps(w1, w2):
                 errors.append(f"{p1} and {p2} both work in '{w1}' / '{w2}'")
@@ -62,17 +64,18 @@ def _selftest():
         a.write_text(good)
         b.write_text(good.replace("src/a.ts", "src/b.ts"))
         c.write_text(good.replace("src/a.ts", "src/**").replace("## Goal\ng\n", ""))
-        assert check([a, b]) == [], check([a, b])
-        errs = check([a, c])
+        assert check([a, b], parallel=True) == [], check([a, b], parallel=True)
+        errs = check([a, c], parallel=True)
         assert any("Goal" in e for e in errs) and any("both work in" in e for e in errs), errs
-        assert any("a run needs" in e for e in check([a])), "single brief must fail"
+        assert not any("both work in" in e for e in check([a, c])), "sequential tasks may share files"
+        assert check([a]) == [], "one task is fine for tdd"
+        assert any("a run needs" in e for e in check([a], parallel=True)), "parallel needs 2+"
         b.write_text(good.replace("- [ ] c\n", "- [ ] c\n" * 8).replace("src/a.ts", "src/b.ts"))
         assert any("8 criteria" in e for e in check([a, b])), check([a, b])
         r1, r2 = Path(d) / "r1.md", Path(d) / "r2.md"
         r1.write_text(good.replace("- Work in: `src/a.ts`", "- Work in: read-only").replace("- `x`", "- none"))
         r2.write_text(r1.read_text())
-        assert check([r1, r2], 6) == [], check([r1, r2], 6)
-        assert check([a], 1, min_briefs=1) == [], "blocking step allows one brief"
+        assert check([r1]) == [], check([r1])
 
 
 if __name__ == "__main__":
@@ -81,13 +84,10 @@ if __name__ == "__main__":
         _selftest()
         print("selftest ok")
         sys.exit(0)
-    max_briefs, min_briefs = 5, 2
-    if args[:1] == ["--research"]:
-        max_briefs, args = 6, args[1:]
-    elif args[:1] == ["--blocking"]:
-        max_briefs, min_briefs, args = 1, 1, args[1:]
+    parallel = args[:1] == ["--parallel"]
+    args = args[1:] if parallel else args
     if not args:
-        sys.exit("usage: check_briefs.py [--research | --blocking] <brief.md>... | --selftest")
-    errs = check(args, max_briefs, min_briefs=min_briefs)
+        sys.exit("usage: check_briefs.py [--parallel] <brief.md>... | --selftest")
+    errs = check(args, parallel)
     print("\n".join(errs) or f"ok: {len(args)} briefs")
     sys.exit(1 if errs else 0)

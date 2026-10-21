@@ -16,11 +16,11 @@ Two failed fixes on one premise are two pieces of evidence that the premise is w
 - Design one test of it: a log line, a query, a minimal repro; it must give a different result if the premise is false.
 - Look at which cases fail and which pass, not only how badly; the pattern usually names the real cause.
 - Premise false: drop both fixes and look for what the failures share. Premise true: ask the next "why" per rule-fix-at-the-source.
-- In /build, a premise you cannot test inside the brief goes into the escalation, stated verbatim.
+- In `/simply:tdd`, a premise you cannot test inside the brief goes into the report's Escalation, stated verbatim.
 
 **Not this:**
 - Fix 3: "maybe it needs a longer timeout" after two timeout tweaks failed.
 - Reverting fix 2 and trying fix 1 again with a small variation.
 - Testing the premise by reasoning about the code instead of observing it running.
 
-**In simply:** /build Limits (2 self-review rounds) and Step 6 (same premise fails twice: stop and escalate), /factory Step 6 (1 retry, then the user).
+**In simply:** `/simply:tdd` self-review (same premise fails twice: stop and escalate in the report); `/simply:review` escalates to the user after loop 2.

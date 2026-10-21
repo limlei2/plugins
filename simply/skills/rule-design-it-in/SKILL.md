@@ -21,4 +21,4 @@ When a requirement changes, ask what you would build if it had been known on day
 - Adding an optional field that half the code ignores.
 - Updating the code but leaving the format file, README, or example on the old shape.
 
-**In simply:** `/simply:factory` Step 1 plans blocking first steps (a shared type or schema) before parallel work. Changing a format like `handoff-format.md` means updating `/simply:give`, `/simply:take`, and `check_handoff.py` together.
+**In simply:** `/simply:plan` gives blocking work (a shared type or schema) the lowest task numbers so it lands first. Changing a format like `run-format.md` means updating every stage and `run_state.py` together.

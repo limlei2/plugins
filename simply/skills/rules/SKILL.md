@@ -45,6 +45,6 @@ Every rule is its own skill at `${CLAUDE_PLUGIN_ROOT}/skills/rule-<name>/SKILL.m
 
 ## When two rules pull apart
 
-- `rule-decide-and-report` covers reversible work only. A skill's explicit wait point (`/factory` Step 3, `/goodmorning`'s final question) and anything irreversible still wait; ask per `rule-ask-with-context`.
+- `rule-decide-and-report` covers reversible work only. A skill's explicit wait point (`/plan`'s tdd-or-subagents question, prompt-mode pauses, `/review` before opening PRs in prompt mode, `/goodmorning`'s final question) and anything irreversible still wait; ask per `rule-ask-with-context`.
 - `rule-smallest-change` never cuts verification: `rule-verify-the-real-thing` still applies to the smallest change.
 - `rule-bounded-loops` decides when to stop retrying; `rule-question-the-assumption` decides what to do instead.

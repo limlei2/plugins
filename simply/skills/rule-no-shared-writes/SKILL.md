@@ -22,4 +22,4 @@ When parallel actors might write the same thing, first ask whether they need the
 - Two dev servers both started on port 3000.
 - Two sessions both editing the same handoff file without a `Status:` claim.
 
-**In simply:** `/simply:factory` Step 1 (Shared state), `check_briefs.py`'s Work-in overlap check, worktree isolation in its Models table, and per-task ports. `/simply:take` claims a handoff with `Status: taken`.
+**In simply:** `/simply:plan`'s shared-state checkpoint, `check_briefs.py --parallel`'s Work-in overlap check, and `/simply:subagents`' worktree per worker and per-task ports. `/simply:take` claims a handoff with `Status: taken`.

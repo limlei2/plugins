@@ -21,7 +21,7 @@ Pipeline: start → brainstorm → plan → tdd | subagents → review → appro
 
 | Limit | Value | Why |
 | --- | --- | --- |
-| Questions to the user | 1 message, only when the task is empty | Every other unclear point is brainstorm's job; asking here asks twice. |
+| Questions to the user | 1 message, only when the task is empty | Every other unclear point is brainstorm's interview; asking here asks twice. |
 | Pauses in this skill | 0, in both modes | Start only records the run; there is nothing yet for the user to approve. Brainstorm is the first stage that pauses in prompt mode. |
 
 ## Step 1. Parse the arguments
@@ -55,7 +55,7 @@ run_state.py check <run>
 One short block, nothing else:
 - **Run:** the `<run>` path.
 - **Mode:** `auto` or `prompt`.
-- **Next:** brainstorm writes `design.md`, then plan writes the task briefs and asks you to choose tdd or subagents, then the tasks run and get reviewed before any PR opens.
+- **Next:** brainstorm interviews you one question at a time (reply **skip** to let it decide the rest), writes `design.md`, and waits for your go; then plan asks about its open choices the same way, writes the task briefs, and asks you to choose tdd or subagents, then the tasks run and get reviewed before any PR opens.
 - Prompt mode only: "I'll pause after each stage and wait for your **go**."
 
 ## Hand-off

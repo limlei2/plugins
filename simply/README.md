@@ -54,15 +54,15 @@ brainstorm ──► plan ──► you pick: tdd or subagents ──► tdd | s
 - **auto** (default): stages hand off with no pauses.
 - **prompt**: after each stage you get its summary and findings; reply **go** to continue, or say what to change.
 
-It always stops for three things: choosing tdd or subagents (asked on every run), approving PRs in prompt mode, and the loop limit.
+It always stops for: brainstorm's interview and your **go** on `design.md`, plan's questions and the tdd-or-subagents choice (asked on every run), approving PRs in prompt mode, and the loop limit. Both interviews ask one question at a time with a recommended answer; reply **skip** to let it decide the rest, or put "don't ask me, just decide" in the task to skip both interviews (and, in auto mode, the design go).
 
 **State:** every run lives in `.simply/runs/<date>-<slug>/`: `run.md` (mode, stage, loop count, chosen mode, pending tasks, a log), `design.md`, `tasks/` (one brief per task), `reports/` (evidence per task), `review.md`. Stages change `run.md` only through `run_state.py`, which refuses invalid values.
 
 | Stage | What it does | Limits |
 | --- | --- | --- |
 | `start` | Checks the repo is clean, creates the run, picks auto or prompt | — |
-| `brainstorm` | Reads only the code the task touches; writes `design.md` (goal, approach, decisions with reasons, out of scope, open questions). Decides instead of asking; can run `/simply:research` on one "which library" question | 1 question, 1 research, 60-line design |
-| `plan` | Planning checkpoint (what must land first, what's independent, what's shared, which names cross task boundaries, how big each task is), one brief per task with checkable criteria, checked by a script. **Asks you: tdd or subagents**, with a recommendation | 1–5 tasks, 7 criteria each |
+| `brainstorm` | Reads the code the task touches, then **interviews you** one question at a time (what you'll see, scope, edge cases, data shape, how to prove it) with its recommended answer, skipping anything the code answers. Writes `design.md` (goal, approach, decisions tagged `you` / `my call` / `code`, out of scope, open questions) and **waits for your go**. Can run `/simply:research` on one "which library" question | 1 question per message, until done or **skip**; 1 research, 60-line design |
+| `plan` | Planning checkpoint (what must land first, what's independent, what's shared, which names cross task boundaries, how big each task is), one brief per task with checkable criteria, checked by a script. **Asks you** one at a time about open plan choices (split, order, interfaces, how each task is proved), then **tdd or subagents**, each with a recommendation | 1–5 tasks, 7 criteria each |
 | `tdd` | One agent, one branch (`simply/<slug>`), tasks in order. For each criterion: failing test first, minimal code, green, commit. Verifies on the real surface (browser, curl, query), self-reviews, writes a report per task, pushes | 2 self-review rounds |
 | `subagents` | One fresh worker per task in its own worktree, all at once; each worker runs `tdd` on its brief. Models by difficulty (opus / sonnet / haiku). Checks every report, retries a task once | 5 workers, 10 agents per run |
 | `review` | The main agent reads every diff against its brief and re-runs the checks itself; writes `review.md`. **approve** → opens PR(s): one for tdd, one per task for subagents. **changes** → back to `plan` with only the fixes | 2 loops, 5 findings per task, 5 PRs |

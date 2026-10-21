@@ -15,11 +15,11 @@ The user reviews after the fact. For reversible work (editing code, writing file
 - Report choices in the output: what you decided, why, and how to undo it.
 - Stop and wait at every explicit wait point a skill defines, with no exceptions.
 - Stop for irreversible or outward-facing actions: force-push, deleting data, sending messages, merging, publishing.
-- When you must ask, ask once, before work starts, in the format of `rule-ask-with-context`.
+- When you must ask, use the format of `rule-ask-with-context`: an interview before work starts, or one batched escalation.
 
 **Not this:**
 - "Should I add a test for this?" on a task whose criteria need one.
 - "Want me to continue?" after each step.
 - Skipping `/simply:plan`'s tdd-or-subagents question because this rule says not to block.
 
-**In simply:** `/simply:brainstorm` records assumptions as Decisions instead of asking; `/simply:tdd` records literal readings under Assumptions. Wait points it never overrides: `/simply:plan`'s tdd-or-subagents question, every prompt-mode pause, `/simply:goodmorning` waiting for the first task, `/simply:take` on a mismatch.
+**In simply:** `/simply:brainstorm` asks only choices that change what gets built and records the rest as `(my call)` Decisions; `/simply:tdd` records literal readings under Assumptions. Wait points it never overrides: `/simply:plan`'s tdd-or-subagents question, every prompt-mode pause, `/simply:goodmorning` waiting for the first task, `/simply:take` on a mismatch.

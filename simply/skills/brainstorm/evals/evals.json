@@ -4,27 +4,44 @@
     {
       "id": 1,
       "name": "done-command",
-      "prompt": "add a done command to the todo cli so i can mark an item finished by its number, and list should show [x] next to done ones",
+      "prompt": "add a done command to the todo cli so i can mark an item finished by its number, and list should show [x] next to done ones Don't ask me questions, just decide.",
       "expected_output": "The brainstorm stage of a run for this task, run via /simply:start in auto mode. Fixture: a clean git repo with todo.py (add/list CLI storing todos.json), test_todo.py (unittest), CLAUDE.md; no remote.",
       "files": [],
       "expectations": [
         "design.md has exactly 5 '## ' sections: Goal, Approach, Decisions, Out of scope, Open questions, in that order",
         "design.md is 60 lines or fewer",
         "every bullet under ## Decisions contains 'why:'",
-        "no file outside .simply/ was changed in the repo (git status --porcelain -- . ':!.simply' is empty)"
+        "no file outside .simply/ was changed in the repo (git status --porcelain -- . ':!.simply' is empty)",
+        "every bullet under ## Decisions ends with a tag: (you), (my call), or (code: <file>:<line>)",
+        "no message to the user contains a **Question:** line before design.md is written"
       ]
     },
     {
       "id": 2,
       "name": "corrupt-json-recovery",
-      "prompt": "the app crashes with a JSONDecodeError if todos.json gets corrupted. make it not crash - keep the broken file around so i dont lose stuff, and start with an empty list",
+      "prompt": "the app crashes with a JSONDecodeError if todos.json gets corrupted. make it not crash - keep the broken file around so i dont lose stuff, and start with an empty list Don't ask me questions, just decide.",
       "expected_output": "The brainstorm stage of a run for this task, run via /simply:start in auto mode. Fixture: a clean git repo with todo.py (add/list CLI storing todos.json), test_todo.py (unittest), CLAUDE.md; no remote.",
       "files": [],
       "expectations": [
         "design.md has exactly 5 '## ' sections: Goal, Approach, Decisions, Out of scope, Open questions, in that order",
         "design.md is 60 lines or fewer",
         "every bullet under ## Decisions contains 'why:'",
-        "no file outside .simply/ was changed in the repo (git status --porcelain -- . ':!.simply' is empty)"
+        "no file outside .simply/ was changed in the repo (git status --porcelain -- . ':!.simply' is empty)",
+        "every bullet under ## Decisions ends with a tag: (you), (my call), or (code: <file>:<line>)",
+        "no message to the user contains a **Question:** line before design.md is written"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "interview-first-question",
+      "prompt": "add a done command to the todo cli so i can mark an item finished by its number, and list should show [x] next to done ones",
+      "expected_output": "The first reply of the brainstorm stage of a run for this task, run via /simply:start in auto mode. Fixture: a clean git repo with todo.py (add/list CLI storing todos.json), test_todo.py (unittest), CLAUDE.md; no remote.",
+      "files": [],
+      "expectations": [
+        "the reply says the user can reply skip to let it decide the rest",
+        "the reply has exactly one **Question:** line, plus a **Found:** line citing a file and a **My answer:** line",
+        "the question is not one todo.py already answers (for example, where todos are stored)",
+        "design.md does not exist yet and no file outside .simply/ was changed"
       ]
     }
   ]

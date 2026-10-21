@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Pipeline stage 2: turns design.md into 1-5 checked task briefs and asks you to run them with /simply:tdd or /simply:subagents; after a review asking for changes, writes only the fix tasks."
+description: "Pipeline stage 2: questions you one at a time on the plan's open choices, turns design.md into 1-5 checked task briefs, and asks you to run them with /simply:tdd or /simply:subagents; after a review asking for changes, writes only the fix tasks."
 disable-model-invocation: true
 ---
 
@@ -32,7 +32,8 @@ Hard limits. Never exceed them, even if the design implies more.
 | Tasks per first plan | 1 min, 5 max | More than 5 is more than one review can check in one sitting; split the request across runs. |
 | Tasks in subagents mode | 2 min, 5 max | One task doesn't need parallel worktrees; more workers mean more merge conflicts. |
 | Criteria per brief | 7 max | More than 7 means more than one task; cheap executors lose track of long criteria lists. |
-| Questions to the user | 1: the tdd-or-subagents choice, first plan only | Brainstorm already settled intent; every other gap is a decision to record in Constraints. |
+| Questions per message | 1, with your recommended answer; first plan only, a loop plan asks nothing | One question gets a considered answer; a loop's findings are already exact. |
+| Interview length | Until every open plan choice is answered, or the user replies **skip**; the tdd-or-subagents question is always asked | Brainstorm settled what to build; this settles how it splits, which the user may see differently. |
 | Fix tasks per loop | 1 per branch with findings | Two fix tasks on one branch would collide; the findings for a branch belong in one brief. |
 
 More than 5 tasks: brief the first 5 in run order, list the rest under "Next run" in the Output, and stop there.
@@ -49,6 +50,15 @@ Read `<run>/design.md`, then the files its Approach names and the files they imp
 6. **Size.** Estimate each task's diff: changed lines and files, excluding lockfiles and generated files. Split a task where a reviewer could reject one part and approve the other; fold a task that is only setup (config, scaffolding, a type) into the task whose deliverable needs it. The estimate is a guess written into the brief, not a limit.
 
 A task with more than 7 criteria is too big: split it, or cut criteria that restate another.
+
+Then question the user on the plan's open choices, one question per message in brainstorm's shape (**Found** / **Question** / **My answer**), waiting for each reply (rule: `rule-ask-with-context`). Ask only what `design.md` doesn't settle and would change the briefs:
+
+- where to split, and in what order the tasks land;
+- an interface's name or shape, when more than one would be reasonable;
+- what proves each task: which test command, which surface;
+- a task whose estimate is far larger than the others: split it, or keep it whole.
+
+Never re-ask a Decision in `design.md`. Choices that don't change the briefs: decide and record in Constraints (rule: `rule-decide-and-report`). Record each answer in the Constraints of the briefs it touches. On **skip**, or when the run log shows the user opted out of brainstorm's questions, decide the rest yourself. Nothing open: no questions; say so. The tdd-or-subagents question is still asked.
 
 ## Step 2. Write and check the briefs (first plan)
 

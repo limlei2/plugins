@@ -1,12 +1,12 @@
 ---
 name: brainstorm
-description: "Pipeline stage 1: settles what the task means and how to approach it in design.md before any planning. Runs after /simply:start; hands off to /simply:plan."
+description: "Pipeline stage 1: interviews you one question at a time until every open decision is settled, writes design.md, and waits for your go before planning. Runs after /simply:start; hands off to /simply:plan."
 disable-model-invocation: true
 ---
 
 # Brainstorm
 
-Settle intent before planning: one goal, one approach, every decision written down with its reason, so plan never has to guess.
+Grill the user until intent is settled: one goal, one approach, every decision written down with its reason and who made it, so plan never has to guess.
 
 **Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
 
@@ -20,7 +20,8 @@ Settle intent before planning: one goal, one approach, every decision written do
 
 | Limit | Value | Why |
 | --- | --- | --- |
-| Questions to the user | 1 message, only when a one-sentence Goal can't be written | Everything else is a decision you can make and record; questions the code answers waste the user's time. |
+| Questions per message | 1, with your recommended answer | One question gets a considered answer; a list gets skimmed. The recommendation makes "yes" a full reply. |
+| Interview length | Until every open branch is answered, or the user replies **skip** | The user, not a count, decides when they've said enough; **skip** hands every remaining branch to you. |
 | `/simply:research` calls | 1, for one "which library or approach" question | Research is the most expensive step here; one question that needs outside facts is the most a design should hang on. |
 | `design.md` length | 60 lines max | Past 60 lines it is a plan, not a design; detail belongs in plan's briefs. |
 
@@ -37,16 +38,35 @@ No run: stop and tell the user to run `/simply:start <task>`. Read the task with
 
 ## Step 2. Read the code
 
-Read the files the task names and the files they import, plus the project's `CLAUDE.md` and package manifest. Read nothing else, and keep raw file contents out of your reply: summarize (rule: `rule-keep-context-lean`).
+Read the files the task names and the files they import, plus the project's `CLAUDE.md` and package manifest. Read more only to answer a branch in Step 3 before asking it, and keep raw file contents out of your reply: summarize (rule: `rule-keep-context-lean`).
 
-## Step 3. Settle intent
+## Step 3. Interview
 
-Write the Goal as one sentence: the outcome, not the steps.
+Walk the design tree one branch at a time, in dependency order: settle what the user sees before how it's stored, and the shape of data before the code that reads it (rule: `rule-ask-with-context`). The branches, covered only where this task leaves them open and never read out as a list:
 
-- Can't write it from the task and the code: ask the user once, all questions in one message, each with what you found and the options you see, then wait (rule: `rule-ask-with-context`).
-- Anything else unclear: pick the most literal reading, record it as a Decision with its why, and keep going (rule: `rule-decide-and-report`).
+- what the user does and sees, and what success looks like;
+- scope: what this deliberately won't do;
+- edge cases and error behavior: empty, invalid, duplicate, concurrent, missing input;
+- data, API, or file shape, and what happens to existing data;
+- what existing code to reuse, reshape, or delete (rule: `rule-design-it-in`);
+- how to prove it works: which tests, which surface (browser, curl, CLI);
+- which library or approach, when there is a real choice.
 
-An open question that needs outside facts to choose a library or approach: read `${CLAUDE_PLUGIN_ROOT}/skills/research/SKILL.md` and follow it in its From-brainstorm mode for that one question (no clarifying question, 20-fetch budget). Record its pick as a Decision with the research's reason. A second such question stays in Open questions.
+Before each question, check whether the code, `CLAUDE.md`, or `git log` answers it. If it does, don't ask: record a Decision tagged `(code: <file>:<line>)`. A choice a sensible builder would settle without changing what gets built (a variable name, a helper's location): decide it, tag it `(my call)`, don't ask (rule: `rule-decide-and-report`).
+
+Each question is its own message, in this shape, then wait for the reply:
+
+```markdown
+**Found:** <what the code says, with file:line, 1-2 lines>
+**Question:** <one sentence>
+**My answer:** <the answer you'd pick> — <one-line why>
+```
+
+The first message starts with one line: "I'll ask one question at a time; reply **skip** whenever you want me to decide the rest." A task with nothing open gets no questions: say so and go to Step 4. A task that already says not to ask ("don't ask me", "just decide", "skip the questions") counts as **skip** before the first question; record that with `run_state.py log <run> "brainstorm: user opted out of questions"`.
+
+After each reply, record the Decision tagged `(you)`. Follow any new branch the answer opens. An answer that contradicts an earlier one or the code: say which, and ask which wins. Stop when every open branch has a Decision. On **skip**: decide every remaining branch, tag each `(my call)`, and go to Step 4.
+
+A branch that needs outside facts to choose a library or approach: read `${CLAUDE_PLUGIN_ROOT}/skills/research/SKILL.md` and follow it in its From-brainstorm mode for that one question (no clarifying question, 20-fetch budget), then ask the user to confirm its pick as the next question. A second such branch stays in Open questions.
 
 ## Step 4. Write `<run>/design.md`
 
@@ -62,7 +82,7 @@ Exactly these `##` sections, in this order, all present:
 <2-5 sentences: how the change fits the existing code, naming the files it touches>
 
 ## Decisions
-- <decision> — why: <reason>
+- <decision> — why: <reason> (you | my call | code: <file>:<line>)
 
 ## Out of scope
 - <what this run deliberately won't do>, or `none`
@@ -71,7 +91,7 @@ Exactly these `##` sections, in this order, all present:
 - <question plan must work around, with the default plan should assume>, or `none`
 ```
 
-Every assumption from Step 3 is a Decision. Prefer the approach that deletes or reshapes existing code over one that bolts a layer on (rule: `rule-design-it-in`).
+Every answer and every call from Step 3 is a Decision, tagged with who made it, so the user can see which choices they never heard. Prefer the approach that deletes or reshapes existing code over one that bolts a layer on (rule: `rule-design-it-in`).
 
 ## Step 5. Check
 
@@ -86,17 +106,18 @@ Over 60 lines: cut detail that belongs in a brief. Fix and re-run until both hol
 
 - **Goal:** the sentence.
 - **Approach:** one line.
-- **Decisions:** each with its why.
+- **Decisions:** each with its why and its tag; list the `(my call)` ones first, since the user hasn't seen them.
 - **Out of scope** and **Open questions**, or `none`.
 - The `design.md` path.
 
 ## Hand-off
 
 1. `run_state.py log <run> "brainstorm: <n> decisions, <n> open questions"` and `run_state.py set <run> stage=plan`.
-2. `run_state.py get <run> mode`. If `prompt`: send the Output above and end with "Reply **go** to continue to plan, or tell me what to change." Wait. If the user asks for changes, apply them to `design.md`, re-run Step 5, and summarize again.
-3. If `auto`, or after **go**: read and follow `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md`.
+2. `run_state.py get <run> mode`. Send the Output above. If the mode is `prompt`, or the user answered any question, end with "Reply **go** to continue to plan, or tell me what to change." and wait. Only an `auto` run whose task opted out of the questions continues without waiting. If the user asks for changes, apply them to `design.md`, re-run Step 5, and summarize again. Apart from that one opt-out, nothing is planned or built until the user approves the design.
+3. After **go**, or straight on for an opted-out `auto` run: read and follow `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md`.
 
 ## Guardrails
 
 - Never write task briefs, branches, or code here: briefs need a settled design, and code needs briefs.
-- Never leave a Decision without its why: plan can't tell a choice from an accident without it.
+- Never leave a Decision without its why and its tag: plan can't tell a choice from an accident without the why, and the user can't tell what they agreed to without the tag.
+- Never ask a question the code answers, and never send two questions in one message.

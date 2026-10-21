@@ -63,3 +63,7 @@ for t in simply/skills/*/scripts/*.py; do python3 "$t" --selftest; done
 ## Credits
 
 Parts of `simply` adapt ideas from [pstack](https://github.com/cursor/plugins/tree/main/pstack) by Lauren Tan (MIT License). See [simply/README.md](simply/README.md#rules).
+
+## Conventions and gotchas
+
+- The installed plugin updates only from GitHub `main`, not local branches: run `claude plugin marketplace update limlei2-plugins`, then `claude plugin update simply@limlei2-plugins`, then restart Claude Code.

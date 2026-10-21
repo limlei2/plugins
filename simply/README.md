@@ -63,7 +63,7 @@ It always stops for three things: choosing tdd or subagents (asked on every run)
 | `start` | Checks the repo is clean, creates the run, picks auto or prompt | — |
 | `brainstorm` | Reads only the code the task touches; writes `design.md` (goal, approach, decisions with reasons, out of scope, open questions). Decides instead of asking; can run `/simply:research` on one "which library" question | 1 question, 1 research, 60-line design |
 | `plan` | Planning checkpoint (what must land first, what's independent, what's shared), one brief per task with checkable criteria, checked by a script. **Asks you: tdd or subagents**, with a recommendation | 1–5 tasks, 7 criteria each |
-| `tdd` | One agent, one branch (`simply/<slug>`), tasks in order. For each criterion: failing test first, minimal code, green, commit. Verifies on the real surface (browser, curl, query), self-reviews, writes a report per task, pushes | 2 self-review rounds, 400 lines / 10 files per task |
+| `tdd` | One agent, one branch (`simply/<slug>`), tasks in order. For each criterion: failing test first, minimal code, green, commit. Verifies on the real surface (browser, curl, query), self-reviews, writes a report per task, pushes | 2 self-review rounds |
 | `subagents` | One fresh worker per task in its own worktree, all at once; each worker runs `tdd` on its brief. Models by difficulty (opus / sonnet / haiku). Checks every report, retries a task once | 5 workers, 10 agents per run |
 | `review` | The main agent reads every diff against its brief and re-runs the checks itself; writes `review.md`. **approve** → opens PR(s): one for tdd, one per task for subagents. **changes** → back to `plan` with only the fixes | 2 loops, 5 findings per task, 5 PRs |
 

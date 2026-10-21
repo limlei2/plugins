@@ -32,7 +32,6 @@ Hard limits. Hitting one means stop that task and escalate (Step 7); never push 
 | --- | --- | --- |
 | Criteria in a brief | 7 max | More than 7 means more than one task; it should be split, not squeezed. |
 | Self-review rounds (Step 6) | 2 max | Two failed fixes on one premise mean the premise is wrong; a third fix wastes tokens on the same mistake. |
-| Diff per task, excluding lockfiles and generated files | 400 changed lines, 10 files | Past this a reviewer stops reading carefully, so bugs get through. |
 | Questions to the user | 0 | Execute runs unattended; anything unclear is an assumption in the report or an escalation. |
 
 ## Step 1. Set up (inline only)
@@ -110,7 +109,7 @@ Read `git diff <task base>...HEAD` as a reviewer would:
 - Comments that narrate what the code does. Keep only comments that explain a non-obvious why.
 - Layers a reader must trace: one-caller wrappers, needless indirection, mutable state with wide scope (rule: `rule-easy-to-follow`).
 
-Fix what you find, commit, then repeat Step 5. At most 2 review-fix rounds (rule: `rule-bounded-loops`). If the same premise fails twice (the same check, the same criterion), stop: write down the assumption both fixes shared and put it in the Escalation (rule: `rule-question-the-assumption`). Don't try a third fix. Check the diff size against **Limits**: `git diff --stat <task base>...HEAD`.
+Fix what you find, commit, then repeat Step 5. At most 2 review-fix rounds (rule: `rule-bounded-loops`). If the same premise fails twice (the same check, the same criterion), stop: write down the assumption both fixes shared and put it in the Escalation (rule: `rule-question-the-assumption`). Don't try a third fix.
 
 ## Step 7. Report and push
 

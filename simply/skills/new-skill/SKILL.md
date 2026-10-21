@@ -32,7 +32,7 @@ List `simply/skills/`. If an existing skill already covers the job, say which on
 **Body, in this order**
 1. `# Title` and one sentence of purpose.
 2. `## Modes`, if it runs both standalone and as a `/simply:subagents` worker. The worker mode never asks the user and never spawns agents. A pipeline stage ends with a `## Hand-off` section in the same shape as `/simply:plan`'s (log, set stage, prompt-mode pause, read the next stage's file).
-3. `## Limits`: a table `Limit | Value | Why` for every count that can run away (rounds, retries, agents, searches, diff size, items in a list). The Why is one line saying what goes wrong past the limit.
+3. `## Limits`: a table `Limit | Value | Why` for every count that can run away (rounds, retries, agents, searches, items in a list). The Why is one line saying what goes wrong past the limit.
 4. Numbered `## Step N.` sections. Exact commands for fragile steps, in fenced `bash` blocks. A check-and-fix loop for anything that can fail.
 5. `## Output`: the exact sections of the final reply.
 6. `## Guardrails`: concrete failure modes, one line each.

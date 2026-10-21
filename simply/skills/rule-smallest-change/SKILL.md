@@ -22,4 +22,4 @@ Make the smallest change that meets every criterion. Deleting code beats adding 
 - A new helper that duplicates one already in `utils/`.
 - "While I'm here" edits outside the brief's Work in files.
 
-**In simply:** `/simply:tdd` writes the minimal code to pass each failing test; its 400-line, 10-file diff limit per task enforces it. `/simply:plan` asks for the smallest decomposition.
+**In simply:** `/simply:tdd` writes the minimal code to pass each failing test and cuts anything outside the brief in self-review. `/simply:plan` asks for the smallest decomposition.

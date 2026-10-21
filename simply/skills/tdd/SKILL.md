@@ -157,9 +157,5 @@ Inline only:
 
 ## Guardrails
 
-- Never open a PR; review opens them on approve.
-- Never write code for a criterion before its failing test has run and failed for the right reason.
-- Never mark a criterion met without evidence from the real artifact; a green suite is not evidence for an untested criterion.
-- Never weaken, skip, or delete a check or test to make it pass. A check that cannot pass is an escalation.
-- Never rewrite a brief or patch a wrong one; escalate and move on.
-- Never ask the user or spawn agents during execute.
+- Never open a PR: review opens them on approve, so a PR now ships unchecked code.
+- Never weaken, skip, or delete a check or test to make it pass: escalate a check that cannot pass; weakening it hides the failure.

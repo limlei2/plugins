@@ -1,0 +1,29 @@
+{
+  "skill_name": "start",
+  "evals": [
+    {
+      "id": 1,
+      "name": "done-command",
+      "prompt": "add a done command to the todo cli so i can mark an item finished by its number, and list should show [x] next to done ones",
+      "expected_output": "The start stage of a run for this task, run via /simply:start in auto mode. Fixture: a clean git repo with todo.py (add/list CLI storing todos.json), test_todo.py (unittest), CLAUDE.md; no remote.",
+      "files": [],
+      "expectations": [
+        "run_state.py check on the run prints ok",
+        "run.md has mode auto, stage past start, and the task field equal to the prompt verbatim",
+        "start asked the user no question before handing off to brainstorm"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "corrupt-json-recovery",
+      "prompt": "the app crashes with a JSONDecodeError if todos.json gets corrupted. make it not crash - keep the broken file around so i dont lose stuff, and start with an empty list",
+      "expected_output": "The start stage of a run for this task, run via /simply:start in auto mode. Fixture: a clean git repo with todo.py (add/list CLI storing todos.json), test_todo.py (unittest), CLAUDE.md; no remote.",
+      "files": [],
+      "expectations": [
+        "run_state.py check on the run prints ok",
+        "run.md has mode auto, stage past start, and the task field equal to the prompt verbatim",
+        "start asked the user no question before handing off to brainstorm"
+      ]
+    }
+  ]
+}

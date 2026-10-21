@@ -11,7 +11,7 @@ Every loop gets an exact maximum written down before the first iteration. Reachi
 **Why:** An unbounded loop converts tokens into repeated attempts on the same wrong idea, and the user learns about it from the bill instead of from a question they could have answered in one line.
 
 **Do:**
-- Set the number before starting: 2 self-review rounds, 1 retry per task, 3 searches per fact, 11 agents per run.
+- Set the number before starting: 2 self-review rounds, 1 retry per task, 3 searches per criterion, 10 agents per run.
 - Count every iteration; the limit applies even when the next attempt "looks close".
 - On hitting it, stop editing; commit and push partial work to the branch so nothing is lost.
 - Escalate in exactly three parts: Unresolved (the exact failing check and output), Tried (one line per attempt), Question (one, specific, answerable).

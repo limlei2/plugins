@@ -66,7 +66,6 @@ One short block, nothing else:
 
 ## Guardrails
 
-- Never stash, reset, or commit the user's changes to get a clean tree.
-- Never create a second run for the same task in one session; a stage typed later finds this run with `run_state.py latest`.
-- Never edit `run.md` by hand; a field `set` refuses is a bug to report, not to work around.
-- Never start planning or coding here. Start creates the run and hands off.
+- Never stash, reset, or commit the user's changes to get a clean tree: only they know which changes to keep.
+- Never create a second run for the same task in one session: `run_state.py latest` would then pick the wrong one.
+- Never start planning or coding here: brainstorm must settle intent first.

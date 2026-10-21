@@ -111,7 +111,7 @@ Plan the PRs: tdd mode, one PR from `branch`; subagents mode, one PR per worker 
 
 For each branch:
 
-1. Tidy history: squash fixup commits into the commit they fix (`git rebase -i` is unavailable, so run `git merge-base HEAD origin/<default>`, then `git reset --soft <that commit>`, and recommit). 5 commits max, each landable and in order.
+1. Tidy history: a branch with fixup commits ships as one commit, since `git rebase -i` is unavailable. Run `git merge-base HEAD origin/<default>` (prints `<base>`), then `git reset --soft <base>`, then one `git commit` titled like the PR. A branch without fixups keeps its commits.
 2. Push and open the PR ready for review, never as a draft, never with a failing Check:
    ```bash
    git push -u origin <branch>
@@ -146,9 +146,5 @@ Read `loop`.
 
 ## Guardrails
 
-- Never spawn a reviewer or any subagent; the main agent reviews.
-- Never pass a report's claim through as your verdict; every verdict comes from the diff and Checks you re-ran.
-- Never edit a task's code yourself. Findings go back to plan.
-- Never approve with a failing or skipped Check, an open question, or a criterion without real evidence.
-- Never open a PR as a draft, or push before **go** in prompt mode.
-- Never loop a third time, and never loop a question that needs the user.
+- Never edit a task's code yourself: send findings back to plan; a reviewer's own fix goes unreviewed.
+- Never approve with a failing or skipped Check, an open question, or a criterion without real evidence: approve opens PRs, and other people act on them.

@@ -105,9 +105,6 @@ A table `task | class | model | branch | retried | escalation`, then each escala
 
 ## Guardrails
 
-- Never nest: only this skill spawns agents, one level deep. Workers never spawn.
-- Never exceed the **Limits** table or use a model outside the **Models** table.
-- Never open a PR; review opens them on approve.
-- Never edit a worker's branch or code yourself. Retry with a fresh worker or leave it for review.
-- Never resume a worker; every retry is a fresh agent.
-- Never pass a worker's claim through as checked: a report counts only after `check-report` prints `ok`.
+- Never let a worker spawn agents (only this skill spawns, one level deep): nesting breaks the 10-agent cap.
+- Never open a PR: review opens them on approve, so a PR now ships unchecked code.
+- Never edit a worker's branch or code yourself: retry with a fresh worker; your edit would skip report and checks.

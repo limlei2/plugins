@@ -10,36 +10,42 @@ Write today's daily log so a fresh session tomorrow can resume without asking an
 
 **Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule. The log format is fixed in [daily-log-format.md](references/daily-log-format.md). Read it first and follow it exactly; `/simply:goodmorning` parses it.
 
+An angle-bracket value (`<repo root>`, `<today>`, `<log>`, `<me>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
+
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Step 1. Locate the log
 
 ```bash
-ROOT=$(git rev-parse --show-toplevel) && cd "$ROOT"
-TODAY=$(date +%F)
-LOG=".simply/daily/$TODAY.md"
+git rev-parse --show-toplevel        # prints <repo root>
+date +%F                             # prints <today>
 ```
 
-If not in a git repo, stop and say so. If `$LOG` exists, read it: this run merges into it (Step 4), it does not start over.
+`<log>` is `<repo root>/.simply/daily/<today>.md`. If the first command fails (not a git repo), stop and say so. If `<log>` exists, read it: this run merges into it (Step 4), it does not start over.
 
 ## Step 2. Gather the day's work
 
 Run these, ignoring any that fail because a tool is missing:
 
 ```bash
-ME=$(git config user.email)
-git log --all --since=midnight --author="$ME" --format='%h %D %s'
-git branch --show-current; git rev-parse --short HEAD
+git config user.email                # prints <me>
+git log --all --since=midnight --author=<me> --format='%h %D %s'
+git branch --show-current
+git rev-parse --short HEAD
 git status --short
-gh pr list --author @me --state all --search "updated:>=$TODAY" --json number,title,state,headRefName,url
-gh pr list --search "reviewed-by:@me updated:>=$TODAY" --state all --json number,title,url
-find .simply/handoffs -type f -newermt "$TODAY" 2>/dev/null
+gh pr list --author @me --state all --search "updated:>=<today>" --json number,title,state,headRefName,url
+gh pr list --search "reviewed-by:@me updated:>=<today>" --state all --json number,title,url
+find <repo root>/.simply/handoffs -type f -newermt <today>
 ```
+
+A `find` error because `.simply/handoffs` doesn't exist means there are no handoffs today.
 
 If `gh` is missing or unauthenticated, say so in the reply and continue with git only.
 
 Other sessions in this project today (5 max, excluding this one):
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/goodnight/scripts/recent_sessions.py "$ROOT" "${CLAUDE_SESSION_ID}"
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/goodnight/scripts/recent_sessions.py <repo root> ${CLAUDE_SESSION_ID}
 ```
 
 Each result is a first request and a last reply, not a full record: use it to add Done or In progress items only where the reply states the outcome, and mark them `verified: unverified` unless a commit or PR above confirms them.
@@ -65,7 +71,7 @@ Create `.simply/daily/` if missing. If today's log already exists, merge: keep e
 Check it, fix every error it prints, and re-run until it prints `ok`:
 
 ```bash
-python3 ${CLAUDE_PLUGIN_ROOT}/skills/goodnight/scripts/check_log.py "$LOG"
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/goodnight/scripts/check_log.py <log>
 ```
 
 `/simply:goodmorning` runs the same script before reading, so a log that fails here is a log tomorrow can't parse.

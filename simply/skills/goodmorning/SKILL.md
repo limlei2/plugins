@@ -10,16 +10,20 @@ Brief the user on where work stands, comparing last night's log with reality, th
 
 The log format is defined in `${CLAUDE_PLUGIN_ROOT}/skills/goodnight/references/daily-log-format.md`. Read it first; parse the log by its exact headings and ` | key: value` fields.
 
+An angle-bracket value (`<repo root>`, `<log>`, `<since>`) is what an earlier command printed or the log said: get it once, then write it literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
+
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Step 1. Find the newest log
 
 ```bash
-ROOT=$(git rev-parse --show-toplevel) && cd "$ROOT"
-ls .simply/daily/*.md 2>/dev/null | sort | tail -1
+git rev-parse --show-toplevel        # prints <repo root>
+ls <repo root>/.simply/daily/
 ```
 
-If not in a git repo, stop and say so. If there is no log, say "No daily log found" and skip to Step 3 with `SINCE=$(date -v-2d +%FT%T 2>/dev/null || date -d '2 days ago' +%FT%T)`.
+If the first command fails (not a git repo), stop and say so. The newest log is the last `.md` file in name order (names are dates); its full path is `<log>`. If there is none, say "No daily log found" and skip to Step 3 with `<since>` two days ago: run `date -v-2d +%FT%T` (macOS), or `date -d '2 days ago' +%FT%T` if that fails.
 
-Otherwise read the log and take from its header: `updated`, `head`, and `branches`. Set `SINCE` to `updated`. If the log is more than 7 days old, say so in the briefing.
+Otherwise read the log and take from its header: `updated`, `head`, and `branches`. `<since>` is `updated`. If the log is more than 7 days old, say so in the briefing.
 
 ## Step 2. Parse the log
 
@@ -37,20 +41,25 @@ Run these, ignoring any that fail because a tool is missing:
 
 ```bash
 git fetch --all --prune --quiet
-git log --all --since="$SINCE" --format='%h %an %D %s'
-git branch --show-current; git status --short
-gh pr list --author @me --state all --search "updated:>=${SINCE%%T*}" --json number,title,state,headRefName,mergedAt
+git log --all --since=<since> --format='%h %an %D %s'
+git branch --show-current
+git status --short
+gh pr list --author @me --state all --search "updated:>=<since date>" --json number,title,state,headRefName,mergedAt
 ```
+
+`<since date>` is the `YYYY-MM-DD` part of `<since>`.
 
 For each branch in the log's `branches` and In progress items:
 
 ```bash
-git rev-parse --short "<branch>" 2>/dev/null || echo gone
-git log -1 --format=%cr "<branch>"
-gh pr view "<branch>" --json number,state,mergedAt,statusCheckRollup
+git rev-parse --short <branch>       # fails if the branch is gone
+git log -1 --format=%cr <branch>
+gh pr view <branch> --json number,state,mergedAt,statusCheckRollup
 ```
 
-Handoffs: list every file under `.simply/handoffs/`. Read only its `Status:` line. A file with `Status: open` is not yet taken; anything else is taken. If the field is missing, list the file as "status unknown".
+A failing `rev-parse` means the branch is gone; skip the other two for it.
+
+Handoffs: list every file under `<repo root>/.simply/handoffs/`. Read only its `Status:` line. A file with `Status: open` is not yet taken; anything else is taken. If the field is missing, list the file as "status unknown".
 
 If `gh` is missing or unauthenticated, say so and continue with git only.
 

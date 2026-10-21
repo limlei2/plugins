@@ -14,6 +14,10 @@ Check every task of a pipeline run yourself, then ship it or send it back. You (
 
 Run state lives in files: read and write it only through `run_state.py`, in the format in `${CLAUDE_PLUGIN_ROOT}/skills/start/references/run-format.md` (rule: `rule-state-lives-in-files`).
 
+`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. An angle-bracket value (`<run>`, `<repo root>`, `<default>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
+
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Limits
 
 Hard limits. Never exceed them, even if the run implies more.
@@ -32,29 +36,36 @@ Over 5 findings on a task: keep the 5 that block a criterion or Check, and make 
 Use the run folder you were handed. If the user typed `/simply:review` directly, find it:
 
 ```bash
-S=${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py
-RUN=$(python3 $S latest "$(git rev-parse --show-toplevel)")
-python3 $S check "$RUN" && python3 $S set "$RUN" stage=review
-for f in mode loop execute branch; do python3 $S get "$RUN" $f; done
+git rev-parse --show-toplevel          # prints <repo root>
+run_state.py latest <repo root>        # prints <run>
 ```
 
-Read `$RUN/design.md` and every `$RUN/tasks/<n>-<slug>.md`. Find the base every diff compares against:
+Then, with the run folder either way:
 
 ```bash
-DEFAULT=$(git symbolic-ref --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
-[ -n "$DEFAULT" ] || DEFAULT=$(gh repo view --json defaultBranchRef -q .defaultBranchRef.name)
-git fetch origin "$DEFAULT"
+run_state.py check <run>                              # must print ok
+run_state.py set <run> stage=review                   # only after check printed ok
+run_state.py get <run> mode loop execute branch
 ```
+
+Read `<run>/design.md` and every `<run>/tasks/<n>-<slug>.md`. Find the base every diff compares against:
+
+```bash
+git symbolic-ref --short refs/remotes/origin/HEAD     # prints origin/<default>
+git fetch origin <default>
+```
+
+If `symbolic-ref` fails, run `gh repo view --json defaultBranchRef -q .defaultBranchRef.name` instead; it prints `<default>`.
 
 ## Step 2. Check each task yourself
 
 A report is a claim, not evidence (rule: `rule-verify-the-real-thing`). For each task file, in task-number order:
 
-1. No `reports/<n>-<slug>.md`: verdict `changes`, finding "no report". Otherwise run `python3 $S check-report $RUN/reports/<n>-<slug>.md`; any error is a finding.
+1. No `reports/<n>-<slug>.md`: verdict `changes`, finding "no report". Otherwise run `run_state.py check-report <run>/reports/<n>-<slug>.md`; any error is a finding.
 2. Branch: tdd mode uses the run's `branch` for every task; subagents mode uses the report's `## Branch`. Read the diff without dumping it into your reply (rule: `rule-keep-context-lean`):
    ```bash
-   git diff "origin/$DEFAULT"...<branch> -- <the brief's Work-in paths>
-   git diff --stat "origin/$DEFAULT"...<branch>
+   git diff origin/<default>...<branch> -- <the brief's Work-in paths>
+   git diff --stat origin/<default>...<branch>
    ```
 3. Against the brief, each of these is a finding:
    - a criterion with no change that meets it, or with evidence that is not a real command result or file:line ("should work", a suite that never exercises it);
@@ -68,7 +79,7 @@ Verdict per task: `approve` with finding `ok`, or `changes` with its findings, 5
 
 Subagents mode with 3+ worker branches: also read the branches side by side for conflicts between them: duplicated helpers, inconsistent naming, a contract one branch changes and another relies on. Each conflict is a finding on the later task.
 
-## Step 3. Write `$RUN/review.md`
+## Step 3. Write `<run>/review.md`
 
 Exactly these sections, in this order:
 
@@ -92,7 +103,7 @@ n/a
 - `## Changes needed`: one bullet per finding: `- task <n>: <file>:<line>: <what is wrong>; done when <what done looks like>`. Or `none`.
 - `## Cross-task`: tdd mode `n/a`; subagents mode with 1–2 branches `n/a`; with 3+ branches one bullet per conflict, or `none`.
 
-If questions were collected, ask them now in one message (rule: `rule-ask-with-context`) and wait. Questions always go to the user, never into a loop. Append each answer to `$RUN/design.md` under its decisions, then continue.
+If questions were collected, ask them now in one message (rule: `rule-ask-with-context`) and wait. Questions always go to the user, never into a loop. Append each answer to `<run>/design.md` under its decisions, then continue.
 
 ## Step 4. Approve: ship
 
@@ -100,7 +111,7 @@ Plan the PRs: tdd mode, one PR from `branch`; subagents mode, one PR per worker 
 
 For each branch:
 
-1. Tidy history: squash fixup commits into the commit they fix (`git rebase -i` is unavailable, so use `git reset --soft $(git merge-base HEAD "origin/$DEFAULT")` and recommit). 5 commits max, each landable and in order.
+1. Tidy history: squash fixup commits into the commit they fix (`git rebase -i` is unavailable, so run `git merge-base HEAD origin/<default>`, then `git reset --soft <that commit>`, and recommit). 5 commits max, each landable and in order.
 2. Push and open the PR ready for review, never as a draft, never with a failing Check:
    ```bash
    git push -u origin <branch>
@@ -118,14 +129,14 @@ For each branch:
 
 Subagents mode: after all PRs exist, add a line `Related: #<n>, #<n>` to each body naming its sibling PRs (`gh pr edit <n> --body-file <body.md>`).
 
-Then `python3 $S set "$RUN" stage=done` and `python3 $S log "$RUN" "review: approve, <k> PR(s) opened"`.
+Then `run_state.py set <run> stage=done` and `run_state.py log <run> "review: approve, <k> PR(s) opened"`.
 
 ## Step 5. Changes: loop or escalate
 
 Read `loop`.
 
-- **loop < 2**: `python3 $S set "$RUN" loop=<loop+1> stage=plan`, then `python3 $S log "$RUN" "review: changes (<one-line summary>)"`. Prompt mode: show the Tasks table and Changes needed, then "Reply **go** to send these findings back to plan", and wait. Auto mode: read `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` and follow it with this run.
-- **loop == 2**: stop looping (rule: `rule-bounded-loops`). `python3 $S set "$RUN" stage=escalated`, `python3 $S log "$RUN" "review: escalated after 2 loops"`, and report to the user (rule: `rule-ask-with-context`): **Unresolved** (each finding still open, with file:line), **Tried** (one line per loop, from the run log and earlier findings), **Question** (one specific question whose answer unblocks the run). Name the assumption every loop shared (rule: `rule-question-the-assumption`). Then stop.
+- **loop < 2**: `run_state.py set <run> loop=<loop+1> stage=plan`, then `run_state.py log <run> "review: changes (<one-line summary>)"`. Prompt mode: show the Tasks table and Changes needed, then "Reply **go** to send these findings back to plan", and wait. Auto mode: read `${CLAUDE_PLUGIN_ROOT}/skills/plan/SKILL.md` and follow it with this run.
+- **loop == 2**: stop looping (rule: `rule-bounded-loops`). `run_state.py set <run> stage=escalated`, `run_state.py log <run> "review: escalated after 2 loops"`, and report to the user (rule: `rule-ask-with-context`): **Unresolved** (each finding still open, with file:line), **Tried** (one line per loop, from the run log and earlier findings), **Question** (one specific question whose answer unblocks the run). Name the assumption every loop shared (rule: `rule-question-the-assumption`). Then stop.
 
 ## Output
 

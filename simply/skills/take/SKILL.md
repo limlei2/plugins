@@ -13,16 +13,20 @@ Continue a task from a `/simply:give` handoff with no loss of context, after pro
 
 The format is defined once in [handoff-format.md](${CLAUDE_PLUGIN_ROOT}/skills/give/references/handoff-format.md). Read it before parsing.
 
+An angle-bracket value (`<repo root>`, `<handoff>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
+
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Step 1. Find the handoff
 
 If `$ARGUMENTS` is a path, use it. Otherwise:
 
 ```bash
-ROOT=$(git rev-parse --show-toplevel)
-grep -l '^Status: open$' "$ROOT"/.simply/handoffs/*.md | sort | tail -1
+git rev-parse --show-toplevel                                  # prints <repo root>
+grep -l '^Status: open$' <repo root>/.simply/handoffs/*.md
 ```
 
-If none is found, say so, list the five newest files in `.simply/handoffs/` with their `Status:` lines, and stop. If the chosen file says `Status: taken`, tell the user who took it and when, and stop unless they confirm.
+The handoff is the last path it prints in name order (names start with the date); that is `<handoff>`. If none is found, say so, list the five newest files in `.simply/handoffs/` with their `Status:` lines, and stop. If the chosen file says `Status: taken`, tell the user who took it and when, and stop unless they confirm.
 
 Read the whole file, then validate it:
 

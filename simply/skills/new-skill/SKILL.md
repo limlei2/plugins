@@ -11,6 +11,8 @@ Draft a new skill in `simply/skills/<name>/` from `$ARGUMENTS`. If `$ARGUMENTS` 
 
 **Rules:** a step marked (rule: `rule-x`) applies that rule. Before doing the step, read `${CLAUDE_PLUGIN_ROOT}/skills/rule-x/SKILL.md` (once per session); the label alone is not the rule.
 
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Step 1. Pin down the job
 
 Work out four things: the task the skill performs, what it hands back, what it must never do, and whether another skill reads its output. If any is unclear after reading the conversation, ask once with all questions together, then wait.
@@ -47,8 +49,10 @@ List `simply/skills/`. If an existing skill already covers the job, say which on
 
 ```bash
 claude plugin validate ${CLAUDE_PLUGIN_ROOT}
-for t in ${CLAUDE_PLUGIN_ROOT}/skills/<name>/scripts/*.py; do python3 "$t" --selftest; done
+python3 ${CLAUDE_PLUGIN_ROOT}/skills/<name>/scripts/<script>.py --selftest
 ```
+
+Run the selftest line once per script in `scripts/`, each as its own call.
 
 Then read the draft as a fresh agent: could it follow every step without guessing? Every "some", "a few", "as needed", "if appropriate" is a guess; replace it with a value. Fix and re-read until there are none.
 

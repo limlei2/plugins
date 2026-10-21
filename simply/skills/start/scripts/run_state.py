@@ -4,7 +4,8 @@
 usage:
   run_state.py new <git-root> <auto|prompt> "<task>"   create a run; prints its folder
   run_state.py latest <git-root>                       prints the newest run folder
-  run_state.py get <run-dir> <field>
+  run_state.py get <run-dir> <field>                   prints the bare value
+  run_state.py get <run-dir> <field> <field> ...       prints '<field>: <value>' per field, in order
   run_state.py set <run-dir> <field>=<value> ...       validated; refuses bad values
   run_state.py log <run-dir> "<stage>: <one line>"
   run_state.py check <run-dir>
@@ -101,6 +102,15 @@ def latest(root):
     return runs[-1].parent if runs else None
 
 
+def get(run, names):
+    f = _read(run)[1]
+    missing = [n for n in names if not f.get(n)]
+    if missing:
+        sys.exit(f"no field '{missing[0]}'")
+    # one field prints the bare value, so existing single-field callers keep working
+    return f[names[0]] if len(names) == 1 else "\n".join(f"{n}: {f[n]}" for n in names)
+
+
 def set_fields(run, pairs):
     text, f = _read(run)
     for pair in pairs:
@@ -132,6 +142,13 @@ def _selftest():
         text, f = _read(run)
         assert f["stage"] == "plan" and f["execute"] == "tdd" and len(_log(text)) == 2, text
         assert latest(d).name.endswith("second-run")
+        assert get(run, ["mode"]) == "prompt", get(run, ["mode"])
+        assert get(run, ["mode", "loop", "execute", "branch"]) == "mode: prompt\nloop: 0\nexecute: tdd\nbranch: build/x"
+        try:
+            get(run, ["mode", "nope"])
+            raise AssertionError("unknown field should exit")
+        except SystemExit as e:
+            assert str(e) == "no field 'nope'", e
         for bad in (["loop=3"], ["mode=fast"], ["task=x"]):
             try:
                 set_fields(run, bad)
@@ -161,8 +178,8 @@ if __name__ == "__main__":
     elif len(a) == 2 and a[0] == "latest":
         r = latest(a[1])
         print(r) if r else sys.exit("no runs in .simply/runs/")
-    elif len(a) == 3 and a[0] == "get":
-        print(_read(a[1])[1].get(a[2]) or sys.exit(f"no field '{a[2]}'"))
+    elif len(a) >= 3 and a[0] == "get":
+        print(get(a[1], a[2:]))
     elif len(a) >= 3 and a[0] == "set":
         set_fields(a[1], a[2:])
     elif len(a) == 3 and a[0] == "log":

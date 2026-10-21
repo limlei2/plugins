@@ -13,6 +13,10 @@ Turn the current task into one handoff file a cold agent can pick up and continu
 
 The format is the contract with `/simply:take`: follow [references/handoff-format.md](references/handoff-format.md) exactly, every heading, in order.
 
+An angle-bracket value (`<repo root>`, `<stash sha>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
+
+**Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
+
 ## Step 1. Pick the task
 
 Identify the single task in flight from the conversation. If several are interleaved, take the one the user worked on last and name the others under Open questions. Slug: the first word of `$ARGUMENTS` if it matches `^[a-z0-9-]{3,40}$`, else 2–4 lowercase hyphenated words from the task. Anything else in `$ARGUMENTS` goes under Note from giver.
@@ -20,17 +24,18 @@ Identify the single task in flight from the conversation. If several are interle
 ## Step 2. Freeze the code state
 
 ```bash
-ROOT=$(git rev-parse --show-toplevel)
-cd "$ROOT"
-git status --porcelain -- . ':(exclude).simply'
+git rev-parse --show-toplevel                                   # prints <repo root>
+git -C <repo root> status --porcelain -- . ':(exclude).simply'
 ```
+
+Run every git command in this step with `-C <repo root>`, so paths resolve from the root without a `cd`.
 
 If that prints anything, stash it and put it straight back, so the receiver gets a fixed snapshot and this working tree is untouched:
 
 ```bash
-git stash push -u -m "simply-give: <slug>" -- . ':(exclude).simply'
-STASH=$(git rev-parse 'stash@{0}')
-git stash apply --index "$STASH"
+git -C <repo root> stash push -u -m "simply-give: <slug>" -- . ':(exclude).simply'
+git -C <repo root> rev-parse 'stash@{0}'                        # prints <stash sha>
+git -C <repo root> stash apply --index <stash sha>
 ```
 
 Then record `git branch --show-current` and `git rev-parse HEAD`. Use the full SHAs, never `stash@{N}` (it shifts).
@@ -41,7 +46,7 @@ If not in a git repo, use the current directory as root and write `Branch: none 
 
 ## Step 3. Write the handoff
 
-`mkdir -p "$ROOT/.simply/handoffs"`, then write `<YYYY-MM-DD-HHMM>-<slug>.md` (local time, `date +%Y-%m-%d-%H%M`) with `Status: open`.
+Write `<repo root>/.simply/handoffs/<YYYY-MM-DD-HHMM>-<slug>.md` (local time, `date +%Y-%m-%d-%H%M`) with `Status: open`, using the Write tool; it creates the folder.
 
 Fill each section from the conversation and the repo, not memory:
 - Done so far: only items with a real check in this conversation. Name the command and its result. Anything unchecked moves to In progress.

@@ -25,6 +25,8 @@ One pipeline run lives in `<git root>/.simply/runs/<YYYY-MM-DD-HHMM>-<slug>/`. E
 | `created` | `YYYY-MM-DD HH:MM` | when `/simply:start` made the run |
 | `task` | text | the user's request, verbatim |
 
+Read fields with `run_state.py get <run> <field>` (prints the bare value) or `run_state.py get <run> <field> <field> …` (prints one `<field>: <value>` line per field, in order). An unknown field exits non-zero with `no field '<name>'`.
+
 ## Example
 
 ```markdown

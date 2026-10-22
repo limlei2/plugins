@@ -95,7 +95,7 @@ For each task that needs one, spawn a **fresh** worker (never resume the old one
 - a `## Fix` section: what to change in one to three lines (the `check-report` errors, the missing report, or your answer to the escalation's question from the brief, `design.md`, or the code), and `Continue from branch: <branch>` when the previous report names a pushed branch;
 - the previous report, verbatim, or `no report` if there was none.
 
-One retry per task, no more (rule: `rule-bounded-loops`). A question that needs a product or preference decision (naming, UX, scope) is not retried: leave it for review to take to the user (rule: `rule-ask-with-context`). After the retry, whatever the outcome, leave the task for review. A task still without a valid report gets one written by you at its report path: `## Branch` the worker's branch or `none`, `## Commits` `none`, every criterion row with evidence `not run: no valid report`, `## Assumptions` `none`, and an `## Escalation` with Unresolved / Tried / Question. Run `check-report` on it.
+One retry per task, no more (rule: `rule-bounded-loops`). A question that needs a product or preference decision (naming, UX, scope) is not retried: leave it for review to take to the user (rule: `rule-ask-with-context`). After the retry, whatever the outcome, leave the task for review. A task still without a valid report gets one written by you at its report path: `## Branch` the worker's branch or `none`, then `Checks passed at: none`, `## Commits` `none`, every criterion row with evidence `not run: no valid report`, `## Assumptions` `none`, and an `## Escalation` with Unresolved / Tried / Question. Run `check-report` on it.
 
 ## Output
 

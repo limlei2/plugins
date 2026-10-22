@@ -1,6 +1,6 @@
 ---
 name: review
-description: "Pipeline stage after /simply:tdd or /simply:subagents: the main agent checks every task's diff against its brief, re-runs its Checks, writes review.md, then opens the PR(s) or sends findings back to /simply:plan. Start a run with /simply:start."
+description: "Pipeline stage after /simply:tdd or /simply:subagents: the main agent checks every task's diff against its brief, re-runs the Checks only where no report tested the branch head, writes review.md, then opens the PR(s) or sends findings back to /simply:plan. Start a run with /simply:start."
 disable-model-invocation: true
 ---
 
@@ -67,7 +67,11 @@ A report is a claim, not evidence (rule: `rule-verify-the-real-thing`). For each
    - bugs, unhandled edge cases, callers of a changed symbol left unchanged (`grep` for each);
    - an Interfaces `Provides:` item missing or spelled differently from the brief, or a `Uses:` item called with a different signature than its provider built;
    - a diff more than twice the brief's Estimate with no `size:` Assumption explaining it.
-4. Re-run every command in the brief's Checks yourself on that branch: in the worktree that has it checked out (`git worktree list`), else `git switch <branch>` in a clean main checkout. A failing or skipped Check is a finding. Never weaken a Check to make it pass.
+4. Checks, once per branch at its head, never per task: a stacked branch's lower commits are covered by the tasks that tested them. Run `git rev-parse --short origin/<branch>`; it prints `<head>`. Take the `Checks passed at` line from the report of the branch's last task (tdd mode: the highest task number; subagents mode: that branch's report).
+   - It equals `<head>`: the worker ran the full Checks on exactly this code. Don't re-run them; the same commit gives the same result.
+   - It differs, or is `none`: run every command in the brief's Checks yourself at `<head>`, in the worktree that has the branch checked out (`git worktree list`), else `git switch <branch>` in a clean main checkout.
+
+   A failing Check, or a skipped one with no matching `Checks passed at`, is a finding. Never weaken a Check to make it pass.
 5. Report `## Escalation` not `none`: if the question is a product or preference decision (naming, UX, scope), collect it as a question for the user (Step 3). Otherwise it is a finding.
 
 Verdict per task: `approve` with finding `ok`, or `changes` with its findings, 5 max.
@@ -94,7 +98,7 @@ none
 n/a
 ```
 
-- `## Verdict`: the single line `approve` or `changes`. `approve` only if every task is `approve`, every Check passed, there is no cross-task conflict, and no question is open.
+- `## Verdict`: the single line `approve` or `changes`. `approve` only if every task is `approve`, every branch's Checks passed (re-run, or reported at its head), there is no cross-task conflict, and no question is open.
 - `## Changes needed`: one bullet per finding: `- task <n>: <file>:<line>: <what is wrong>; done when <what done looks like>`. Or `none`.
 - `## Cross-task`: tdd mode `n/a`; subagents mode with 1–2 branches `n/a`; with 3+ branches one bullet per conflict, or `none`.
 

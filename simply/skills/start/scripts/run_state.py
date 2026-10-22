@@ -78,6 +78,9 @@ def check_report(path):
         errors.append("Criteria needs a table 'criterion | evidence' with one row per criterion")
     if any(len(c) < 2 or not c[1] for c in ([x.strip() for x in r.strip().strip("|").split("|")] for r in rows)):
         errors.append("every Criteria row needs evidence")
+    # review compares this commit with the branch head to decide whether to re-run the Checks
+    if not re.search(r"^Checks passed at: \S+\s*$", text.split("## Commits")[0], re.M):
+        errors.append("## Branch needs a line 'Checks passed at: <short sha>' (or 'none')")
     return errors
 
 
@@ -165,13 +168,15 @@ def _selftest():
         assert any("loop" in e for e in check(run))
         assert check(Path(d) / "nope") == [f"{Path(d) / 'nope'}/run.md not found"]
         rep = Path(d) / "r.md"
-        good = "## Branch\nb\n## Commits\n- abc x\n## Criteria\n| criterion | evidence |\n| --- | --- |\n| 400 on bad email | curl -> 400 |\n## Assumptions\nnone\n## Escalation\nnone\n"
+        good = "## Branch\nb\nChecks passed at: abc\n## Commits\n- abc x\n## Criteria\n| criterion | evidence |\n| --- | --- |\n| 400 on bad email | curl -> 400 |\n## Assumptions\nnone\n## Escalation\nnone\n"
         rep.write_text(good)
         assert check_report(rep) == [], check_report(rep)
         rep.write_text(good.replace("curl -> 400 |", " |"))
         assert any("evidence" in e for e in check_report(rep)), check_report(rep)
         rep.write_text(good.replace("## Escalation\nnone\n", ""))
         assert check_report(rep)
+        rep.write_text(good.replace("Checks passed at: abc\n", ""))
+        assert any("Checks passed at" in e for e in check_report(rep)), check_report(rep)
 
 
 if __name__ == "__main__":

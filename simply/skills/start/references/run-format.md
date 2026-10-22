@@ -9,7 +9,7 @@ One pipeline run lives in `<git root>/.simply/runs/<YYYY-MM-DD-HHMM>-<slug>/`. E
 | `run.md` | every stage, via `run_state.py` | the fields below and a one-line log per stage |
 | `design.md` | brainstorm | goal, approach, decisions, out of scope, open questions |
 | `tasks/<n>-<slug>.md` | plan | one brief per task, in `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md` format; `<n>` is the run order |
-| `reports/<n>-<slug>.md` | tdd (inline or as a subagents worker) | per task: `## Branch`, `## Commits`, `## Criteria` (table `criterion \| evidence`, one row per criterion), `## Assumptions`, `## Escalation` (`none` or unresolved / tried / question). Checked by `run_state.py check-report` |
+| `reports/<n>-<slug>.md` | tdd (inline or as a subagents worker) | per task: `## Branch` (the branch, then `Checks passed at: <short sha>`, the commit the brief's full Checks last passed on, or `none`), `## Commits`, `## Criteria` (table `criterion \| evidence`, one row per criterion), `## Assumptions`, `## Escalation` (`none` or unresolved / tried / question). Checked by `run_state.py check-report` |
 | `review.md` | review | a verdict per task, then `approve` or `changes` |
 
 ## `run.md` fields

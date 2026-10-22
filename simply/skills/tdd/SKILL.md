@@ -120,6 +120,7 @@ Write the report with the Write tool to `reports/<n>-<slug>.md` (inline) or the 
 ```markdown
 ## Branch
 simply/add-input-validation
+Checks passed at: a1b2c3d
 ## Commits
 - a1b2c3d feat(users): return 400 when name is missing
 ## Criteria
@@ -134,7 +135,7 @@ none
 none
 ```
 
-Commits: run `git log --oneline <task base>..HEAD` as its own call and paste its output into the file; don't capture it in a shell variable. One Criteria row per criterion, every row with evidence; an unmet criterion's evidence is the exact failure. No `|` inside a cell. Escalation is `none` or three bullets: `- Unresolved:` the criterion or check with the exact failure, `- Tried:` each attempt in one line, `- Question:` one question whose answer unblocks the task. Validate and fix until it prints `ok`:
+`Checks passed at`: the short sha (`git rev-parse --short HEAD`) of the commit the brief's full Checks last passed on. If you committed after that run, run the Checks again first: review skips its own re-run only when this matches the branch head. `none` if they never passed. Commits: run `git log --oneline <task base>..HEAD` as its own call and paste its output into the file; don't capture it in a shell variable. One Criteria row per criterion, every row with evidence; an unmet criterion's evidence is the exact failure. No `|` inside a cell. Escalation is `none` or three bullets: `- Unresolved:` the criterion or check with the exact failure, `- Tried:` each attempt in one line, `- Question:` one question whose answer unblocks the task. Validate and fix until it prints `ok`:
 
 ```bash
 run_state.py check-report <report path>

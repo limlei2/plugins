@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Pipeline stage 2: questions you one at a time on the plan's open choices, turns design.md into 1-5 checked task briefs, and asks you to run them with /simply:tdd or /simply:subagents; after a review asking for changes, writes only the fix tasks."
+description: "Pipeline stage 2: questions you one at a time on the plan's open choices, turns design.md into 1-10 checked task briefs, and asks you to run them with /simply:tdd or /simply:subagents; after a review asking for changes, writes only the fix tasks."
 disable-model-invocation: true
 ---
 
@@ -29,14 +29,14 @@ Hard limits. Never exceed them, even if the design implies more.
 
 | Limit | Value | Why |
 | --- | --- | --- |
-| Tasks per first plan | 1 min, 5 max | More than 5 is more than one review can check in one sitting; split the request across runs. |
+| Tasks per first plan | 1 min, 10 max | Tasks of one tdd run land in order on one branch, so more of them cost time, not review load; past 10, split the request across runs. |
 | Tasks in subagents mode | 2 min, 5 max | One task doesn't need parallel worktrees; more workers mean more merge conflicts. |
 | Criteria per brief | 7 max | More than 7 means more than one task; cheap executors lose track of long criteria lists. |
 | Questions per message | 1, with your recommended answer; first plan only, a loop plan asks nothing | One question gets a considered answer; a loop's findings are already exact. |
 | Interview length | Until every open plan choice is answered, or the user replies **skip**; the tdd-or-subagents question is always asked | Brainstorm settled what to build; this settles how it splits, which the user may see differently. |
 | Fix tasks per loop | 1 per branch with findings | Two fix tasks on one branch would collide; the findings for a branch belong in one brief. |
 
-More than 5 tasks: brief the first 5 in run order, list the rest under "Next run" in the Output, and stop there.
+More than 10 tasks: brief the first 10 in run order, list the rest under "Next run" in the Output, and stop there.
 
 ## Step 1. Planning checkpoint (first plan)
 
@@ -62,7 +62,7 @@ Never re-ask a Decision in `design.md`. Choices that don't change the briefs: de
 
 ## Step 2. Write and check the briefs (first plan)
 
-Write the criteria before any code exists (rule: `rule-criteria-before-code`). One brief per task in the format in `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md`, to `<run>/tasks/<n>-<slug>.md`: `<n>` is the run order 1..5, blocking work first; `<slug>` is 2-4 lowercase words from the task's Goal, hyphenated.
+Write the criteria before any code exists (rule: `rule-criteria-before-code`). One brief per task in the format in `${CLAUDE_PLUGIN_ROOT}/skills/plan/references/brief.md`, to `<run>/tasks/<n>-<slug>.md`: `<n>` is the run order 1..10, blocking work first; `<slug>` is 2-4 lowercase words from the task's Goal, hyphenated.
 
 - Files and Checks are real paths and real commands from the code you read.
 - Pin every Decision from `design.md` that touches the task in its Constraints, so the executor doesn't remake it.
@@ -77,16 +77,25 @@ Fix every error it reports and re-run until it exits 0 (it then prints `ok: <n> 
 
 ## Step 3. Ask how to execute (first plan, every run, both modes)
 
-Show the checkpoint and a table `task | goal | Work-in files | estimate`. Then ask, and wait for the answer even in auto mode:
+With 2+ tasks, first run `check_briefs.py --parallel <run>/tasks/*.md`, so the user learns what subagents would cost before choosing, not after. Show the checkpoint and a table `task | goal | Work-in files | estimate`. Then ask, and wait for the answer even in auto mode:
 
-> **TDD** (one agent, tasks in order, one branch, one PR) or **subagents** (one worker per task in parallel worktrees, one PR per task)? I recommend **<choice>**: <one-line reason>.
+> I recommend **<choice>**: <one-line reason from the table below>. The other option: **<other>**, <its one-line cost for this plan>. TDD is one agent, tasks in order, one branch, one PR; subagents is one worker per task in parallel worktrees, one PR per task.
 
-Recommend `subagents` only when there are 2+ tasks, no two share a Work-in file, no task uses another's Provides, and there is no blocking first step; otherwise recommend `tdd`.
+Name the recommended option first. Pick it from the first row that matches:
+
+| This plan | Recommend | Why |
+| --- | --- | --- |
+| 1 task | `tdd` | One task needs no parallel worktrees. |
+| A blocking first step, and `check_briefs.py --parallel` on every task but 1 prints `ok` | `tdd`, and add: "once task 1 merges, tasks 2-<n> could run as subagents in a new run" | Workers start together and can't wait for task 1; splitting the run gets the parallel part back. |
+| The parallel check printed `ok`, no blocking first step | `subagents` | The tasks are independent, so running them at once saves time. |
+| Anything else | `tdd` | Tasks share files or use each other's Provides, so parallel workers would conflict. |
+
+If the parallel check reported errors, add one line under the question: what subagents mode would have to do first (which tasks it would merge because they share files or one uses another's Provides, or that only 5 tasks fit).
 
 ## Step 4. Fit the briefs to the choice (first plan)
 
 - **tdd:** `run_state.py set <run> execute=tdd`.
-- **subagents:** run `check_briefs.py --parallel <run>/tasks/*.md`. On an overlap or a task that uses another's Provides, merge those tasks into one brief (renumber, still 7 criteria max) and re-run until it exits 0. If merging leaves one task, tell the user it now runs as tdd and set `execute=tdd`. For every task that touches UI, add `- Dev server port: <3100 + n>` to Constraints so parallel workers never start servers on the same port. Then `run_state.py set <run> execute=subagents pending=<task numbers>`.
+- **subagents:** run `check_briefs.py --parallel <run>/tasks/*.md`. More than 5 tasks: keep the first 5 and move the rest to "Next run". On an overlap or a task that uses another's Provides, merge those tasks into one brief (renumber, still 7 criteria max) and re-run until it exits 0. If merging leaves one task, tell the user it now runs as tdd and set `execute=tdd`. For every task that touches UI, add `- Dev server port: <3100 + n>` to Constraints so parallel workers never start servers on the same port. Then `run_state.py set <run> execute=subagents pending=<task numbers>`.
 
 ## Step 5. Loop plan
 

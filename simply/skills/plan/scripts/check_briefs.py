@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check /simply:plan task briefs: required sections present, 1-7 criteria, 1-5 tasks,
+"""Check /simply:plan task briefs: required sections present, 1-7 criteria, 1-10 tasks,
 an Estimate line unless read-only, Uses/Provides lines, and every `Uses: task <n>: X`
 naming an earlier brief whose Provides has X verbatim (looked up beside the brief when
 not passed, so a loop's fix briefs can be checked alone).
@@ -71,9 +71,9 @@ def overlaps(a, b):
     return a == b or a.startswith(b + "/") or b.startswith(a + "/") or not a or not b
 
 
-def check(paths, parallel=False, max_briefs=5, max_criteria=7):
+def check(paths, parallel=False, max_criteria=7):
     errors, claims = [], []
-    min_briefs = 2 if parallel else 1
+    min_briefs, max_briefs = (2, 5) if parallel else (1, 10)
     if not min_briefs <= len(paths) <= max_briefs:
         errors.append(f"{len(paths)} briefs; a run needs {min_briefs} to {max_briefs}")
     for p in paths:
@@ -117,6 +117,9 @@ def _selftest():
         assert not any("both work in" in e for e in check([a, c])), "sequential tasks may share files"
         assert check([a]) == [], "one task is fine for tdd"
         assert any("a run needs" in e for e in check([a], parallel=True)), "parallel needs 2+"
+        assert check([a] * 10) == [], "tdd takes up to 10 tasks"
+        assert any("a run needs" in e for e in check([a] * 11)), "tdd stops at 10"
+        assert any("a run needs 2 to 5" in e for e in check([a] * 6, parallel=True)), "parallel stops at 5"
         b.write_text(good.replace("- [ ] c\n", "- [ ] c\n" * 8).replace("src/a.ts", "src/b.ts"))
         assert any("8 criteria" in e for e in check([a, b])), check([a, b])
         r1, r2 = Path(d) / "r1.md", Path(d) / "r2.md"

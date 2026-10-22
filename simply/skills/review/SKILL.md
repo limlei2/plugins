@@ -14,7 +14,7 @@ Check every task of a pipeline run yourself, then ship it or send it back. You (
 
 Run state lives in files: read and write it only through `run_state.py`, in the format in `${CLAUDE_PLUGIN_ROOT}/skills/start/references/run-format.md` (rule: `rule-state-lives-in-files`).
 
-`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. An angle-bracket value (`<run>`, `<repo root>`, `<default>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
+`run_state.py` below means `python3 ${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`. An angle-bracket value (`<run>`, `<repo root>`, `<base>`) is what an earlier command printed: run that command on its own, then write the printed value literally. Each Bash call starts a fresh shell, so a shell variable would have to be rebuilt in every call.
 
 **Commands:** write every file (reports, briefs, `design.md`, PR bodies) with the Write tool, never `cat > … <<EOF`, `echo >`, or `printf >`. One step per Bash call: no `cd "$PWD"`, and don't chain unrelated steps with `;` or `&&`. Commit messages go in separate `-m` flags with no newline inside a quote: `git commit -m "<subject>" -m "Co-Authored-By: …"`. Why: Claude Code can't check heredocs or multi-line quoted strings, so each such call stops the run for a permission prompt the user can't permanently allow.
 
@@ -45,17 +45,10 @@ Then, with the run folder either way:
 ```bash
 run_state.py check <run>                              # must print ok
 run_state.py set <run> stage=review                   # only after check printed ok
-run_state.py get <run> mode loop execute branch
+run_state.py get <run> mode loop execute base branch
 ```
 
-Read `<run>/design.md` and every `<run>/tasks/<n>-<slug>.md`. Find the base every diff compares against:
-
-```bash
-git symbolic-ref --short refs/remotes/origin/HEAD     # prints origin/<default>
-git fetch origin <default>
-```
-
-If `symbolic-ref` fails, run `gh repo view --json defaultBranchRef -q .defaultBranchRef.name` instead; it prints `<default>`.
+Read `<run>/design.md` and every `<run>/tasks/<n>-<slug>.md`. Every diff compares against `<base>`, and every PR targets it. If `base` is `none` (an older run), `git symbolic-ref --short refs/remotes/origin/HEAD` prints `origin/<base>`. Then `git fetch origin <base>`.
 
 ## Step 2. Check each task yourself
 
@@ -64,8 +57,8 @@ A report is a claim, not evidence (rule: `rule-verify-the-real-thing`). For each
 1. No `reports/<n>-<slug>.md`: verdict `changes`, finding "no report". Otherwise run `run_state.py check-report <run>/reports/<n>-<slug>.md`; any error is a finding.
 2. Branch: tdd mode uses the run's `branch` for every task; subagents mode uses the report's `## Branch`. Read the diff without dumping it into your reply (rule: `rule-keep-context-lean`):
    ```bash
-   git diff origin/<default>...<branch> -- <the brief's Work-in paths>
-   git diff --stat origin/<default>...<branch>
+   git diff origin/<base>...<branch> -- <the brief's Work-in paths>
+   git diff --stat origin/<base>...<branch>
    ```
 3. Against the brief, each of these is a finding:
    - a criterion with no change that meets it, or with evidence that is not a real command result or file:line ("should work", a suite that never exercises it);
@@ -111,13 +104,22 @@ If questions were collected, ask them now in one message (rule: `rule-ask-with-c
 
 Plan the PRs: tdd mode, one PR from `branch`; subagents mode, one PR per worker branch, except a branch that a later fix task replaced: a fix brief's Constraints line `- Fix branch: <b>` means its report's branch was built on `<b>` and supersedes it, so open the PR from the newest branch in each chain only. Prompt mode: show the verdict and the PR plan (`branch | title`), then wait for **go** before pushing anything. Auto mode: continue.
 
+Once per run, before the first PR, make GitHub delete each PR's branch when it merges, so merged run branches don't pile up. It also retargets a stacked PR onto `<base>` when the PR below it merges:
+
+```bash
+gh repo view --json deleteBranchOnMerge -q .deleteBranchOnMerge     # prints true or false
+gh repo edit --delete-branch-on-merge                                # only if it printed false
+```
+
+If the edit fails (no admin rights on the repo), say so in the Output and continue.
+
 For each branch:
 
-1. Tidy history: a branch with fixup commits ships as one commit, since `git rebase -i` is unavailable. Run `git merge-base HEAD origin/<default>` (prints `<base>`), then `git reset --soft <base>`, then one `git commit` titled like the PR. A branch without fixups keeps its commits.
+1. Tidy history: a branch with fixup commits ships as one commit, since `git rebase -i` is unavailable. Run `git merge-base HEAD origin/<base>` (prints `<merge base>`), then `git reset --soft <merge base>`, then one `git commit` titled like the PR. A branch without fixups keeps its commits.
 2. Push and open the PR ready for review, never as a draft, never with a failing Check:
    ```bash
    git push -u origin <branch>
-   gh pr create --head <branch> --title "<type>(<scope>): <subject>" --body-file <body.md>
+   gh pr create --base <base> --head <branch> --title "<type>(<scope>): <subject>" --body-file <body.md>
    ```
 
 **Title:** Conventional Commits. `type` is one of `feat`, `fix`, `refactor`, `perf`, `test`, `docs`, `chore`. `scope` is the area changed. Subject is short, imperative, no trailing period: `feat(users): add cursor pagination`.

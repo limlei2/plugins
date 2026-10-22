@@ -16,7 +16,7 @@ import sys
 import time
 from pathlib import Path
 
-FIELDS = ["mode", "stage", "loop", "execute", "branch", "pending", "created", "task"]
+FIELDS = ["mode", "stage", "loop", "execute", "base", "branch", "pending", "created", "task"]
 REPORT_HEADINGS = ["Branch", "Commits", "Criteria", "Assumptions", "Escalation"]
 ALLOWED = {
     "mode": {"auto", "prompt"},
@@ -33,6 +33,7 @@ def _now():
 def _read(run):
     text = (Path(run) / "run.md").read_text()
     fields = dict(re.findall(r"^- (\w+): (.*)$", text.split("## Log")[0], re.M))
+    fields.setdefault("base", "none")  # runs made before the base field
     return text, fields
 
 
@@ -92,7 +93,7 @@ def new(root, mode, task):
         with exclude.open("a") as f:
             f.write("\n.simply/runs/\n")
     fields = {"mode": mode, "stage": "brainstorm", "loop": "0", "execute": "none",
-              "branch": "none", "pending": "none", "created": _now(), "task": " ".join(task.split())}
+              "base": "none", "branch": "none", "pending": "none", "created": _now(), "task": " ".join(task.split())}
     _write(run, fields, [f"- {_now()} start: mode {mode}"])
     return run
 
@@ -144,6 +145,11 @@ def _selftest():
         assert latest(d).name.endswith("second-run")
         assert get(run, ["mode"]) == "prompt", get(run, ["mode"])
         assert get(run, ["mode", "loop", "execute", "branch"]) == "mode: prompt\nloop: 0\nexecute: tdd\nbranch: build/x"
+        (run / "run.md").write_text(text.replace("- base: none\n", ""))
+        assert check(run) == [] and get(run, ["base"]) == "none", "an old run without base still works"
+        set_fields(run, ["base=setup/x"])
+        assert get(run, ["base"]) == "setup/x"
+        text = _read(run)[0]
         try:
             get(run, ["mode", "nope"])
             raise AssertionError("unknown field should exit")

@@ -11,7 +11,7 @@ Review effort follows the cost of being wrong, not the size of the diff. A renam
 **Why:** Uniform review either wastes the strong model on renames or lets a one-line auth bug through with the same glance a typo fix gets.
 
 **Do:**
-- Classify first: hard (auth, permissions, payments, secrets, concurrency or locking, data migration, more than 5 files), mechanical (rename, copy, config value, dependency bump, no logic change), standard otherwise.
+- Classify first: hard (auth, permissions, payments, secrets, concurrency or locking, data migration; file count alone is not hard), mechanical (rename, copy, config value, dependency bump, no logic change), standard otherwise.
 - Hard: `model: "opus"`, `effort: "high"`; check each criterion on the real surface and read every changed line yourself.
 - Mechanical: `model: "haiku"`, `effort: "low"`; the checks passing and a diff scan for out-of-scope files is enough.
 - Standard: `model: "sonnet"`, `effort: "medium"`; the normal verify and self-review.

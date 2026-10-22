@@ -36,15 +36,19 @@ Empty task: ask once "What should this run build?" and wait. Use the reply as th
 ```bash
 git rev-parse --show-toplevel                              # prints <repo root>
 git -C <repo root> status --porcelain -- . ':!.simply'     # must print nothing
+git -C <repo root> branch --show-current                   # prints <base>
+git -C <repo root> ls-remote --exit-code --heads origin <base>
 ```
 
 - First command fails (not a git repo): stop. Tell the user the pipeline needs a git repository.
 - Second command prints anything (dirty tree): stop. Tell the user to commit or stash first, and list the files it printed. Don't stash for them. `.simply/` is left out on purpose: uncommitted daily logs and handoffs are normal and don't touch code.
+- Third prints nothing (detached HEAD) or the fourth fails (`<base>` isn't on GitHub): stop. Tell the user to switch to the branch the work should build on and push it. Tasks branch from `origin/<base>`, so worktrees and other machines need it there.
 
 ## Step 3. Create the run
 
 ```bash
 run_state.py new <repo root> <auto|prompt> "<task>"     # prints <run>
+run_state.py set <run> base=<base>
 run_state.py check <run>
 ```
 

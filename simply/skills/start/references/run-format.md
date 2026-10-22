@@ -20,6 +20,7 @@ One pipeline run lives in `<git root>/.simply/runs/<YYYY-MM-DD-HHMM>-<slug>/`. E
 | `stage` | `brainstorm` \| `plan` \| `execute` \| `review` \| `done` \| `escalated` | the stage running now, or how the run ended |
 | `loop` | `0` \| `1` \| `2` | review → plan round trips so far; at `2` a failed review escalates instead of looping |
 | `execute` | `none` \| `tdd` \| `subagents` | chosen by the user at the end of the first plan; loops reuse it |
+| `base` | a branch name, or `none` | the branch the user was on at `/simply:start`; every task branch is cut from `origin/<base>`, review diffs against it, and PRs target it. `none` (a run made before this field): use the default branch |
 | `branch` | a branch name, or `none` | the tdd branch; in subagents mode each report's `## Branch` names its worker branch |
 | `pending` | comma-separated task numbers, or `none` | tasks the execute stage must run next; plan sets it, execute clears it to `none` |
 | `created` | `YYYY-MM-DD HH:MM` | when `/simply:start` made the run |
@@ -36,6 +37,7 @@ Read fields with `run_state.py get <run> <field>` (prints the bare value) or `ru
 - stage: review
 - loop: 1
 - execute: tdd
+- base: main
 - branch: simply/add-input-validation
 - pending: 3
 - created: 2026-10-21 10:04

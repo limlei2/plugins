@@ -62,10 +62,10 @@ It always stops for: brainstorm's interview and your **go** on `design.md`, plan
 | --- | --- | --- |
 | `start` | Checks the repo is clean, creates the run, picks auto or prompt | — |
 | `brainstorm` | Reads the code the task touches, then **interviews you** one question at a time: open questions first (what it's for, what success looks like), playing each part back for you to correct, then narrow questions (edge cases, data shape, how to prove it) each with its recommended answer, skipping anything the code answers. Writes `design.md` (goal, approach, decisions tagged `you` / `my call` / `code`, out of scope, open questions), has **one fresh agent read it as a builder** and asks you its leftover questions in one batch, then **waits for your go**. Can run `/simply:research` on one "which library" question | 1 question per message, until done or **skip**; 1 builder check; 1 research, 60-line design |
-| `plan` | Planning checkpoint (what must land first, what's independent, what's shared, which names cross task boundaries, how big each task is), one brief per task with checkable criteria, checked by a script. **Asks you** one at a time about open plan choices (split, order, interfaces, how each task is proved), then **tdd or subagents**, each with a recommendation | 1–5 tasks, 7 criteria each |
+| `plan` | Planning checkpoint (what must land first, what's independent, what's shared, which names cross task boundaries, how big each task is), one brief per task with checkable criteria, checked by a script. **Asks you** one at a time about open plan choices (split, order, interfaces, how each task is proved), then **tdd or subagents**, each with a recommendation | 1–10 tasks (5 in subagents mode), 7 criteria each |
 | `tdd` | One agent, one branch (`simply/<slug>`), tasks in order. For each criterion: failing test first, minimal code, green, commit. Verifies on the real surface (browser, curl, query), self-reviews, writes a report per task, pushes | 2 self-review rounds |
 | `subagents` | One fresh worker per task in its own worktree, all at once; each worker runs `tdd` on its brief. Models by difficulty (opus / sonnet / haiku). Checks every report, retries a task once | 5 workers, 10 agents per run |
-| `review` | The main agent reads every diff against its brief and re-runs the checks itself; writes `review.md`. **approve** → opens PR(s): one for tdd, one per task for subagents. **changes** → back to `plan` with only the fixes | 2 loops, 5 findings per task, 5 PRs |
+| `review` | The main agent reads every diff against its brief and re-runs the checks itself; writes `review.md`. **approve** → opens PR(s): one for tdd, one per task for subagents, and turns on GitHub's delete-branch-on-merge so merged branches are removed. **changes** → back to `plan` with only the fixes | 2 loops, 5 findings per task, 5 PRs |
 
 **The PR** has a Conventional Commits title and these sections: Why · What changed · Scope · Verification (criterion → evidence, from the reports) · Assumptions.
 
@@ -220,7 +220,7 @@ for t in simply/skills/*/scripts/*.py; do python3 "$t" --selftest; done
 | Script | Used by | Checks |
 | --- | --- | --- |
 | `start/scripts/run_state.py` | every pipeline stage | creates runs, reads/sets `run.md` fields (validated), logs, checks task reports |
-| `plan/scripts/check_briefs.py` | plan | brief sections, 1–5 tasks, 7 criteria, a size estimate, each `Uses: task <n>` matching that earlier task's Provides, no file overlap or cross-task Uses in subagents mode |
+| `plan/scripts/check_briefs.py` | plan | brief sections, 1–10 tasks (2–5 with --parallel), 7 criteria, a size estimate, each `Uses: task <n>` matching that earlier task's Provides, no file overlap or cross-task Uses in subagents mode |
 | `goodnight/scripts/check_log.py` | goodnight, goodmorning | daily log format |
 | `goodnight/scripts/recent_sessions.py` | goodnight | today's other sessions |
 | `give/scripts/check_handoff.py` | give, take | handoff format |

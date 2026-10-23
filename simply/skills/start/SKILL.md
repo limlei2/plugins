@@ -47,10 +47,12 @@ git -C <repo root> ls-remote --exit-code --heads origin <base>
 ## Step 3. Create the run
 
 ```bash
-run_state.py new <repo root> <auto|prompt> "<task>"     # prints <run>
+run_state.py new <repo root> <auto|prompt> "<task>" --slug <slug>     # prints <run>
 run_state.py set <run> base=<base>
 run_state.py check <run>
 ```
+
+`<slug>` is 2-4 lowercase words, joined by `-`, naming what the task builds: `cleanup-skill`, not `i-would-like-to`. It names the run folder and prefixes every branch the run creates, so the user can tell runs apart.
 
 `new` writes `run.md` with `stage=brainstorm`, `loop=0`, `execute=none`, `pending=none`, and the task verbatim. If `check` prints errors, stop and show them; don't patch `run.md`.
 

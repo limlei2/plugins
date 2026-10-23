@@ -73,9 +73,9 @@ For every brief that touches UI and has no `Dev server port` in Constraints, app
 
 Spawn every worker in a single message, one Agent call per task, with the values from **Models**. Resolve `${CLAUDE_PLUGIN_ROOT}` to its absolute path; workers read the skill file rather than invoke it, because subagents may not be able to call plugin skills by name. Use this prompt verbatim, then append the full brief:
 
-`Read <abs plugin root>/skills/tdd/SKILL.md and follow it in given-a-brief mode. Do not spawn subagents. Do not ask questions; escalate in the report instead. Base branch: <base>. Write your report to <run path relative to the repo root>/reports/<n>-<slug>.md inside your worktree, and end your reply with its absolute path. Your brief:`
+`Read <abs plugin root>/skills/tdd/SKILL.md and follow it in given-a-brief mode. Do not spawn subagents. Do not ask questions; escalate in the report instead. Base branch: <base>. Branch: <run-slug>/<n>-<slug>. Write your report to <run path relative to the repo root>/reports/<n>-<slug>.md inside your worktree, and end your reply with its absolute path. Your brief:`
 
-The report goes inside the worktree because worktree isolation refuses writes to the main checkout. `.simply/runs/` is git-excluded, so it never lands in a commit.
+`<run-slug>` is the run folder name without its `YYYY-MM-DD-HHMM-` prefix, and `<n>-<slug>` is the brief's file name without `.md`, so each branch names its run and task. The report goes inside the worktree because worktree isolation refuses writes to the main checkout. `.simply/runs/` is git-excluded, so it never lands in a commit.
 
 ## Step 4. Check each report
 

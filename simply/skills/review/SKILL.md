@@ -108,15 +108,6 @@ If questions were collected, ask them now in one message (rule: `rule-ask-with-c
 
 Plan the PRs: tdd mode, one PR from `branch`; subagents mode, one PR per worker branch, except a branch that a later fix task replaced: a fix brief's Constraints line `- Fix branch: <b>` means its report's branch was built on `<b>` and supersedes it, so open the PR from the newest branch in each chain only. Prompt mode: show the verdict and the PR plan (`branch | title`), then wait for **go** before pushing anything. Auto mode: continue.
 
-Once per run, before the first PR, make GitHub delete each PR's branch when it merges, so merged run branches don't pile up. It also retargets a stacked PR onto `<base>` when the PR below it merges:
-
-```bash
-gh repo view --json deleteBranchOnMerge -q .deleteBranchOnMerge     # prints true or false
-gh repo edit --delete-branch-on-merge                                # only if it printed false
-```
-
-If the edit fails (no admin rights on the repo), say so in the Output and continue.
-
 For each branch:
 
 1. Tidy history: a branch with fixup commits ships as one commit, since `git rebase -i` is unavailable. Run `git merge-base HEAD origin/<base>` (prints `<merge base>`), then `git reset --soft <merge base>`, then one `git commit` titled like the PR. A branch without fixups keeps its commits.

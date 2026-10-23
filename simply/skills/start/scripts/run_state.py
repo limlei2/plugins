@@ -2,7 +2,7 @@
 """Create and update /simply pipeline runs (.simply/runs/<ts>-<slug>/run.md). See references/run-format.md.
 
 usage:
-  run_state.py new <git-root> <auto|prompt> "<task>"   create a run; prints its folder
+  run_state.py new <git-root> <auto|prompt> "<task>" [--slug <slug>]   create a run; prints its folder
   run_state.py latest <git-root>                       prints the newest run folder
   run_state.py get <run-dir> <field>                   prints the bare value
   run_state.py get <run-dir> <field> <field> ...       prints '<field>: <value>' per field, in order
@@ -84,10 +84,12 @@ def check_report(path):
     return errors
 
 
-def new(root, mode, task):
+def new(root, mode, task, slug=None):
     if mode not in ALLOWED["mode"]:
         sys.exit(f"mode must be auto or prompt, got {mode}")
-    slug = "-".join(re.findall(r"[a-z0-9]+", task.lower())[:4]) or "run"
+    if slug is not None and not re.fullmatch(r"[a-z0-9]+(-[a-z0-9]+){0,3}", slug):
+        sys.exit(f"slug must be 1-4 lowercase words joined by '-', got {slug}")
+    slug = slug or "-".join(re.findall(r"[a-z0-9]+", task.lower())[:4]) or "run"
     run = Path(root) / ".simply" / "runs" / f"{time.strftime('%Y-%m-%d-%H%M')}-{slug}"
     (run / "tasks").mkdir(parents=True, exist_ok=True)
     # run files must not dirty the tree, or tdd's clean-tree check fails; .git/info/exclude is local, never committed
@@ -140,6 +142,15 @@ def _selftest():
         new(d, "auto", "second run")
         assert (Path(d) / ".git/info/exclude").read_text().count(".simply/runs/") == 1, "exclude written once"
         assert run.name.endswith("post-users-should-return"), run.name
+        named = new(d, "auto", "i would like a cleanup skill", "cleanup-skill")
+        assert named.name.endswith("-cleanup-skill") and _read(named)[0].startswith("# Run: cleanup-skill\n"), named
+        before = len(list((Path(d) / ".simply" / "runs").iterdir()))
+        try:
+            new(d, "auto", "x", "Bad_Slug")
+            raise AssertionError("bad slug should exit")
+        except SystemExit as e:
+            assert "Bad_Slug" in str(e), e
+        assert len(list((Path(d) / ".simply" / "runs").iterdir())) == before, "bad slug creates no folder"
         assert check(run) == [], check(run)
         set_fields(run, ["stage=plan", "execute=tdd", "branch=build/x"])
         add_log(run, "plan: 2 tasks")
@@ -186,6 +197,8 @@ if __name__ == "__main__":
         print("selftest ok")
     elif len(a) == 4 and a[0] == "new":
         print(new(a[1], a[2], a[3]))
+    elif len(a) == 6 and a[0] == "new" and a[4] == "--slug":
+        print(new(a[1], a[2], a[3], a[5]))
     elif len(a) == 2 and a[0] == "latest":
         r = latest(a[1])
         print(r) if r else sys.exit("no runs in .simply/runs/")

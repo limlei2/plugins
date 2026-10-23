@@ -19,6 +19,7 @@ Full usage guide: **[simply/README.md](simply/README.md)**.
 | `/simply:goodnight` | End of day: writes the daily log and saves lasting facts to `CLAUDE.md` |
 | `/simply:give` | Hands one in-progress task to a new chat or agent |
 | `/simply:take` | Resumes a handoff after verifying the repo matches it |
+| `/simply:cleanup` | After runs finish: rundown, one go, deletes run branches and temp files, updates `AGENTS.md`/`README.md`, suggests workflow fixes |
 | `/simply:new-skill` | Drafts a new skill in the house style |
 | `rules` + 21 `rule-*` | Working rules the skills cite at each step; see the guide |
 

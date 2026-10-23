@@ -10,6 +10,7 @@ My personal skills for coding. Every skill runs only when you type it: `/simply:
 | [`/simply:goodnight`](#simplygoodnight) | End the day: save everything tomorrow's session needs |
 | [`/simply:give`](#simplygive) | Hand one in-progress task to a new chat or another agent |
 | [`/simply:take`](#simplytake) | Resume a task someone handed over with `/give` |
+| [`/simply:cleanup`](#simplycleanup) | After runs finish: delete their branches and temp files, update `AGENTS.md` and `README.md`, get workflow notes |
 
 The pipeline stages (`brainstorm`, `plan`, `tdd`, `subagents`, `review`) can also be typed on their own. Also included: [`/simply:new-skill`](#simplynew-skill).
 
@@ -27,6 +28,7 @@ A typical day:
 /simply:start <task>         → brainstorm → plan → build → review → PR
 /simply:give                 → context full? hand off…
 /simply:take <path>          → …and continue in a fresh chat
+/simply:cleanup              → after PRs merge: tidy branches, runs, docs
 /simply:goodnight            → save the day for tomorrow
 ```
 
@@ -63,9 +65,9 @@ It always stops for: brainstorm's interview and your **go** on `design.md`, plan
 | `start` | Checks the repo is clean, creates the run, picks auto or prompt | — |
 | `brainstorm` | Reads the code the task touches, then **interviews you** in rounds of up to 4 multiple-choice cards: the big picture first (what it's for, what success looks like), playing each part back for you to correct, then the details (edge cases, data shape, how to prove it), each card with its recommended answer first, skipping anything the code answers. Writes `design.md` (goal, approach, decisions tagged `you` / `my call` / `code`, out of scope, open questions), has **one fresh agent read it as a builder** and asks you its leftover questions as cards, then **waits for your go**. Can run `/simply:research` on one "which library" question | 1-4 questions per round, until done or **skip**; 1 builder check; 1 research, 60-line design |
 | `plan` | Planning checkpoint (what must land first, what's independent, what's shared, which names cross task boundaries, how big each task is), one brief per task with checkable criteria, checked by a script. **Asks you** in multiple-choice rounds about open plan choices (split, order, interfaces, how each task is proved), then **tdd or subagents**, each with a recommendation | 1–10 tasks (5 in subagents mode), 7 criteria each |
-| `tdd` | One agent, one branch (`simply/<slug>`), tasks in order. For each criterion: failing test first, minimal code, green, commit. Verifies on the real surface (browser, curl, query), self-reviews, writes a report per task, pushes | 2 self-review rounds |
+| `tdd` | One agent, one branch (`<run-slug>/all`; subagents workers use `<run-slug>/<n>-<slug>`), tasks in order. For each criterion: failing test first, minimal code, green, commit. Verifies on the real surface (browser, curl, query), self-reviews, writes a report per task, pushes | 2 self-review rounds |
 | `subagents` | One fresh worker per task in its own worktree, all at once; each worker runs `tdd` on its brief. Models by difficulty (opus / sonnet / haiku). Checks every report, retries a task once | 5 workers, 10 agents per run |
-| `review` | The main agent reads every diff against its brief, and re-runs the checks once per branch only when the last report didn't test the branch head; writes `review.md`. **approve** → opens PR(s): one for tdd, one per task for subagents, and turns on GitHub's delete-branch-on-merge so merged branches are removed. **changes** → back to `plan` with only the fixes | 2 loops, 5 findings per task, 5 PRs |
+| `review` | The main agent reads every diff against its brief, and re-runs the checks once per branch only when the last report didn't test the branch head; writes `review.md`. **approve** → opens PR(s): one for tdd, one per task for subagents; branches stay until you run `/simply:cleanup`. **changes** → back to `plan` with only the fixes | 2 loops, 5 findings per task, 5 PRs |
 
 **The PR** has a Conventional Commits title and these sections: Why · What changed · Scope · Verification (criterion → evidence, from the reports) · Assumptions.
 
@@ -183,6 +185,32 @@ The optional argument names the handoff; anything after it is passed on as a not
 
 ---
 
+## `/simply:cleanup`
+
+**Tidy up after finished runs.** Run it yourself once a run's PRs are merged or closed; no other skill runs it.
+
+```
+/simply:cleanup
+```
+
+**What happens**
+
+1. **Survey.** A script lists every run in `.simply/runs/`, its branches (found by the `<run-slug>/` prefix and the run's reports), worktrees, and PR states. Runs still in progress or with an open PR are listed and left alone.
+2. **Rundown.** One message: how many runs get cleaned, then one section per run (each branch with its flags, worktrees, the run folder), taken handoffs, and every proposed `AGENTS.md` / `README.md` edit as a diff.
+3. **One go.** Reply **go** and it deletes merged run branches (local and remote), clean worktrees, the run folders, and handoffs marked taken. Branches whose PR closed unmerged, or that never got a PR, are asked about one by one. Anything with unpushed commits or uncommitted edits is kept.
+4. **Docs.** Lasting facts from the runs go into `AGENTS.md` (never `CLAUDE.md`); stale `AGENTS.md` lines are removed; `README.md` changes only for things users should know. Edits are left uncommitted.
+5. **Noticed.** Up to 5 notes on what to improve, each citing the run file that shows it and where the fix goes (`AGENTS.md`, a simply skill, or a habit).
+
+Daily logs in `.simply/daily/` are never touched.
+
+| Limit | Value |
+| --- | --- |
+| Go prompts | 1 |
+| Noticed notes | 5 |
+| Agents spawned | 0 |
+
+---
+
 ## `/simply:new-skill`
 
 **Drafts a new skill** in this plugin, in the same style as the ones above: exact limits with reasons, numbered steps, fixed output, scripts for anything mechanical.
@@ -225,3 +253,4 @@ for t in simply/skills/*/scripts/*.py; do python3 "$t" --selftest; done
 | `goodnight/scripts/recent_sessions.py` | goodnight | today's other sessions |
 | `give/scripts/check_handoff.py` | give, take | handoff format |
 | `take/scripts/verify_state.py` | take | repo matches the handoff |
+| `cleanup/scripts/survey.py` | cleanup | read-only JSON of runs, their branches, worktrees, PR states, and safety flags |

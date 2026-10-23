@@ -1,6 +1,6 @@
 # AGENTS.md
 
-A Claude Code plugin marketplace, `limlei2-plugins` (github.com/limlei2/plugins), holding one plugin: `simply`, personal coding-workflow skills. The content is Markdown prompts (`SKILL.md`) plus five Python 3 stdlib checker scripts. There is no app code, build, package manager, lint, or CI. The skills need `git`, `python3`, and `gh` (for PRs and CI) at runtime.
+A Claude Code plugin marketplace, `limlei2-plugins` (github.com/limlei2/plugins), holding one plugin: `simply`, personal coding-workflow skills. The content is Markdown prompts (`SKILL.md`) plus seven Python 3 stdlib scripts. There is no app code, build, package manager, lint, or CI. The skills need `git`, `python3`, and `gh` (for PRs and CI) at runtime.
 
 ## Layout
 
@@ -20,8 +20,13 @@ Command skills run only when the user types `/simply:<name>`:
 
 | Skill | Does | Writes |
 | --- | --- | --- |
-| `build` | One task → brief → implement → verify → self-review → one PR, or an escalation. Never spawns agents. Also runs as a factory worker ("given a brief" mode). | branch `build/<slug>`, commits, PR |
-| `factory` | Plans 2–5 independent tasks, writes briefs, waits for the user to confirm, then dispatches parallel `build` workers in worktrees (or `research` workers), checks every result itself, retries once. The only skill that spawns agents. | `.simply/factory/<run>/*.md` |
+| `start` | Opens a pipeline run (picks a 2–4 word run slug) and hands off to brainstorm. Pipeline: start → brainstorm → plan → tdd \| subagents → review. | `.simply/runs/<YYYY-MM-DD-HHMM>-<run-slug>/run.md` |
+| `brainstorm` | Interviews the user, writes `design.md`, has one fresh agent check it, waits for go. | `<run>/design.md` |
+| `plan` | Turns `design.md` into 1–10 checked briefs, asks tdd or subagents; after review changes, writes only fix briefs. | `<run>/tasks/<n>-<slug>.md` |
+| `tdd` | Runs the briefs test-first on one branch, verifies on the real surface, writes a report per task; also the subagents worker ("given a brief" mode). | branch `<run-slug>/all` (worker: `<run-slug>/<n>-<slug>`), commits, `<run>/reports/` |
+| `subagents` | One fresh tdd worker per task in its own worktree, checks every report, retries once. Spawns agents. | worker branches, `<run>/reports/` |
+| `review` | Checks every diff against its brief, then opens PRs or sends findings back to plan (2 loops max). Does not delete branches. | `<run>/review.md`, PRs |
+| `cleanup` | After runs finish: rundown per run, one go, then deletes merged run branches (local and remote), worktrees, run folders, taken handoffs; edits `AGENTS.md`/`README.md`; up to 5 workflow notes. Never runs from another skill. | deletions, `AGENTS.md`, `README.md` |
 | `research` | One question → sourced findings → one recommendation. Never edits files. | nothing |
 | `goodnight` | End of day: writes the daily log, saves durable facts to the project's `CLAUDE.md`. | `.simply/daily/YYYY-MM-DD.md`, `CLAUDE.md` |
 | `goodmorning` | Reads the newest daily log and compares it with git, PRs, CI, and handoffs. Read-only apart from `git fetch`. | nothing |
@@ -37,7 +42,8 @@ Three formats are each defined once and shared by a writer, a reader, and a chec
 
 | Format | Defined in | Writer | Reader | Checker |
 | --- | --- | --- | --- | --- |
-| Brief | `simply/skills/build/references/brief.md` | factory, build Step 1, research Step 1 | build, research (worker mode) | `factory/scripts/check_briefs.py` |
+| Brief | `simply/skills/plan/references/brief.md` | plan; research Step 1 (adapted) | tdd (inline or as a subagents worker), research | `plan/scripts/check_briefs.py` |
+| Run | `simply/skills/start/references/run-format.md` | every pipeline stage, via `run_state.py` | every stage; cleanup's `survey.py` reads `run.md` and report `## Branch` | `start/scripts/run_state.py check` / `check-report` |
 | Handoff | `simply/skills/give/references/handoff-format.md` | give | take; goodmorning reads only `Status:` | `give/scripts/check_handoff.py`, `take/scripts/verify_state.py` |
 | Daily log | `simply/skills/goodnight/references/daily-log-format.md` | goodnight | goodmorning | `goodnight/scripts/check_log.py` |
 
@@ -47,18 +53,19 @@ Change a format, its writer, its reader, and its checker in one change (`rule-de
 
 These values are repeated across files on purpose (each skill must stand alone). Change one, then `grep -rn '<old value>' README.md simply/` and update every hit.
 
-- **Limits:** 7 criteria per brief; 2–5 build / 2–6 research workers; 11 / 12 agents per run; 2 self-review rounds; 1 retry per task; 40 searches (15 as a worker), 3 per fact; 4 options compared. They appear in the skills' `## Limits` tables, `simply/README.md`, the root `README.md`, rule files (`rule-bounded-loops`, `rule-criteria-before-code`, `rule-smallest-change`, `rule-enforce-dont-remind`), and the defaults in `check_briefs.py`.
-- **Models:** factory's `## Models` table and task classification (hard → opus/high, standard → sonnet/medium, mechanical → haiku/low) are repeated in `simply/README.md` and `rule-spend-review-where-mistakes-are-expensive`.
+- **Limits:** 7 criteria per brief; 1–10 tasks per plan (5 in subagents mode); 2 self-review rounds; 1 retry per task; 2 review loops, 5 findings per task, 5 PRs; 40 searches (20 from brainstorm), 3 per fact; 4 options compared; cleanup: 1 go, 5 notes. They appear in the skills' `## Limits` tables, `simply/README.md`, the root `README.md`, rule files (`rule-bounded-loops`, `rule-criteria-before-code`, `rule-smallest-change`, `rule-enforce-dont-remind`), and the defaults in `check_briefs.py`.
+- **Models:** subagents' `## Models` table and task classification (hard → opus/high, standard → sonnet/medium, mechanical → haiku/low) are repeated in `simply/README.md` and `rule-spend-review-where-mistakes-are-expensive`.
+- **Branch names:** `<run-slug>/all` (tdd) and `<run-slug>/<n>-<slug>` (subagents worker) in tdd, subagents, `run-format.md`, and `simply/README.md`; cleanup's `survey.py` finds a run's branches by the `<run-slug>/` prefix.
 - **Skill list:** the root `README.md` table, and the table plus one `##` section per skill in `simply/README.md`.
 - **Rule count (21):** root `README.md`, `simply/README.md` ("There are 21 rules" and its group table), and the `rules/SKILL.md` tables. The pstack credits in `simply/README.md` name the 15 rules adapted from pstack.
-- **Exact strings other skills grep for:** `Status: open` / `Status: taken by <name> at <YYYY-MM-DD HH:MM>` (give, take, goodmorning, `check_handoff.py`); `## Conventions and gotchas` (goodnight, `simply/README.md`); dev-server port `3101 + task index` (factory, `rule-no-shared-writes`).
+- **Exact strings other skills grep for:** `Status: open` / `Status: taken by <name> at <YYYY-MM-DD HH:MM>` (give, take, goodmorning, cleanup's `survey.py`, `check_handoff.py`); `## Conventions and gotchas` (goodnight, `simply/README.md`); dev-server port `3101 + task index` (subagents, `rule-no-shared-writes`).
 
 ## Writing a skill
 
-`simply/skills/new-skill/SKILL.md` Step 3 is the source of truth, and `build/SKILL.md` is the reference example. In short:
+`simply/skills/new-skill/SKILL.md` Step 3 is the source of truth, and `tdd/SKILL.md` is the reference example. In short:
 
 - Frontmatter: `name` matches the folder (verb or verb-noun); `description` is one sentence plus which sibling skill to use instead; `argument-hint` if it takes input; `disable-model-invocation: true`.
-- Body order: `# Title` + one-sentence purpose, the **Rules** line copied from `build`, `## Modes` (if it can be a factory worker), `## Limits` as `Limit | Value | Why`, numbered `## Step N.`, `## Output` (the exact sections of the final reply), `## Guardrails`.
+- Body order: `# Title` + one-sentence purpose, the **Rules** line copied from `tdd`, `## Modes` (if it can be a subagents worker), `## Limits` as `Limit | Value | Why`, numbered `## Step N.`, `## Output` (the exact sections of the final reply), `## Guardrails`.
 - Exact values, never "a few" or "as needed". Spawning agents uses exact Agent tool values (`subagent_type`, `model`, `effort`, `isolation`) in a table.
 - Cross-skill paths use `${CLAUDE_PLUGIN_ROOT}/skills/<skill>/...`, never `../`.
 - Worker mode never asks the user and never spawns agents.
@@ -78,12 +85,12 @@ Rule files share one ~25-line shape: frontmatter (`disable-model-invocation: tru
 ## Commands
 
 ```bash
-for t in simply/skills/*/scripts/*.py; do python3 "$t" --selftest; done   # all five must print "selftest ok"
+for t in simply/skills/*/scripts/*.py; do python3 "$t" --selftest; done   # all seven must print "selftest ok"
 claude --plugin-dir ./simply                                              # load this working copy
 claude plugin validate ./simply                                           # same check new-skill Step 4 runs
 ```
 
-Try skills that touch git (`build`, `give`, `take`, `goodnight`, `goodmorning`) in a scratch repo, not this one.
+Try skills that touch git (`start` and the pipeline, `cleanup`, `give`, `take`, `goodnight`, `goodmorning`) in a scratch repo, not this one.
 
 ## Change checklists
 
@@ -93,7 +100,7 @@ Try skills that touch git (`build`, `give`, `take`, `goodnight`, `goodmorning`) 
 - **Change a limit or model:** see Sync points.
 - **Add a plugin:** `<plugin>/.claude-plugin/plugin.json`, `<plugin>/skills/`, an entry in `.claude-plugin/marketplace.json`, a row in the root `README.md`.
 - **Version:** bump the minor `version` in `simply/.claude-plugin/plugin.json` when skill behaviour changes; doc-only edits leave it.
-- **Commits:** history so far is short lowercase messages directly on `main`. The Conventional Commits and PR flow inside `build` is for the projects it runs in, not this repo.
+- **Commits:** history so far is short lowercase messages directly on `main`. The Conventional Commits and PR flow inside `tdd` and `review` is for the projects it runs in, not this repo.
 
 ## Don't
 

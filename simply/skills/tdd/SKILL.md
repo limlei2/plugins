@@ -20,7 +20,7 @@ Turn each planned brief into tested, verified, pushed commits plus a report that
 ## Modes
 
 - **Inline** (the run's `execute` is `tdd`, or the user typed `/simply:tdd`): you run every task in `pending`, in number order, on one branch. Find the run with `git rev-parse --show-toplevel` (prints `<repo root>`), then `run_state.py latest <repo root>` (prints `<run>`), unless the previous stage named it. Ends with **Hand-off**.
-- **Given a brief** (you are a `/simply:subagents` worker): your prompt holds one brief, the run's base branch (`<base>`), and a report path inside your worktree. Work on your worktree's branch, or the branch the brief's Constraints name for a fix task. Never ask the user: decide, record the assumption, keep going (rule: `rule-decide-and-report`). Never spawn agents. Never touch `run.md`. Ends after the push; no hand-off.
+- **Given a brief** (you are a `/simply:subagents` worker): your prompt holds one brief, the run's base branch (`<base>`), your branch name (`Branch:`), and a report path inside your worktree. Work on your worktree's branch, or the branch the brief's Constraints name for a fix task. Never ask the user: decide, record the assumption, keep going (rule: `rule-decide-and-report`). Never spawn agents. Never touch `run.md`. Ends after the push; no hand-off.
 
 In both modes execute the brief exactly: no new criteria, no wider scope, no reinterpreted goal.
 
@@ -49,8 +49,8 @@ Inline: `.simply/` holds the run, so leave it out of the clean-tree check. If `r
 
 ```bash
 git status --porcelain -- . ':!.simply'               # must print nothing
-git switch -c simply/<run-slug> origin/<base>         # <run-slug>: the run folder name without its YYYY-MM-DD-HHMM- prefix
-run_state.py set <run> branch=simply/<run-slug>
+git switch -c <run-slug>/all origin/<base>            # <run-slug>: the run folder name without its YYYY-MM-DD-HHMM- prefix
+run_state.py set <run> branch=<run-slug>/all
 ```
 
 Otherwise (a review loop) run the same clean-tree check, then `git switch <branch>` and `git pull --ff-only origin <branch>`. The clean-tree check printing anything (a dirty tree) stops the run: tell the user to commit or stash first. Don't stash for them.
@@ -62,7 +62,11 @@ git fetch origin <base or branch>
 git reset --hard origin/<base or branch>      # your worktree's own fresh branch only
 ```
 
-Run the reset only if the fetch succeeded.
+Run the reset only if the fetch succeeded. Then rename the worktree's branch to the `Branch:` value in your prompt, so the user can tell which run and task it belongs to:
+
+```bash
+git branch -m <Branch value from your prompt>
+```
 
 Then, per task, record its base: run `git rev-parse --short HEAD`; it prints `<task base>`.
 
@@ -119,7 +123,7 @@ Write the report with the Write tool to `reports/<n>-<slug>.md` (inline) or the 
 
 ```markdown
 ## Branch
-simply/add-input-validation
+add-input-validation/all
 Checks passed at: a1b2c3d
 ## Commits
 - a1b2c3d feat(users): return 400 when name is missing

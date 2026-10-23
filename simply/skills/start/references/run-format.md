@@ -1,6 +1,6 @@
 # Run Format
 
-One pipeline run lives in `<git root>/.simply/runs/<YYYY-MM-DD-HHMM>-<slug>/`. Every stage reads and writes it through `${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`; never edit `run.md` by hand.
+One pipeline run lives in `<git root>/.simply/runs/<YYYY-MM-DD-HHMM>-<slug>/`. `<slug>` is the run slug that `/simply:start` passes as `--slug` (older runs: the task's first four words); it is also the `# Run:` heading and the prefix of every branch the run creates. Every stage reads and writes it through `${CLAUDE_PLUGIN_ROOT}/skills/start/scripts/run_state.py`; never edit `run.md` by hand.
 
 ## Folder
 
@@ -21,7 +21,7 @@ One pipeline run lives in `<git root>/.simply/runs/<YYYY-MM-DD-HHMM>-<slug>/`. E
 | `loop` | `0` \| `1` \| `2` | review → plan round trips so far; at `2` a failed review escalates instead of looping |
 | `execute` | `none` \| `tdd` \| `subagents` | chosen by the user at the end of the first plan; loops reuse it |
 | `base` | a branch name, or `none` | the branch the user was on at `/simply:start`; every task branch is cut from `origin/<base>`, review diffs against it, and PRs target it. `none` (a run made before this field): use the default branch |
-| `branch` | a branch name, or `none` | the tdd branch; in subagents mode each report's `## Branch` names its worker branch |
+| `branch` | a branch name, or `none` | the tdd branch, `<run-slug>/all`; in subagents mode each report's `## Branch` names its worker branch, `<run-slug>/<n>-<task-slug>` (the brief's file name without `.md`). `<run-slug>` is the run folder name without its `YYYY-MM-DD-HHMM-` prefix |
 | `pending` | comma-separated task numbers, or `none` | tasks the execute stage must run next; plan sets it, execute clears it to `none` |
 | `created` | `YYYY-MM-DD HH:MM` | when `/simply:start` made the run |
 | `task` | text | the user's request, verbatim |
@@ -38,7 +38,7 @@ Read fields with `run_state.py get <run> <field>` (prints the bare value) or `ru
 - loop: 1
 - execute: tdd
 - base: main
-- branch: simply/add-input-validation
+- branch: add-input-validation/all
 - pending: 3
 - created: 2026-10-21 10:04
 - task: POST /users should return 400 when name is missing or email has no @

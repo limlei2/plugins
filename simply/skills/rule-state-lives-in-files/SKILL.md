@@ -22,4 +22,4 @@ Chat ends when the session does. Anything the next session, another agent, or to
 - A handoff pasted into chat instead of written to `.simply/handoffs/`.
 - A reader that parses a file without running its checker first.
 
-**In simply:** `/simply:goodnight` writes and `/simply:goodmorning` reads the daily log; `/simply:give` writes and `/simply:take` reads handoffs; the pipeline keeps each run in `.simply/runs/` (run.md, design, tasks, reports, review) through `run_state.py`.
+**In simply:** `/simply:goodnight` writes and `/simply:goodmorning` reads the daily log; `/simply:give` writes and `/simply:take` reads handoffs; the pipeline keeps each run in `.simply/runs/` (run.md, design, tasks, reports, review) through `run_state.py`; `/simply:cleanup` deletes finished runs once their lasting facts are in `AGENTS.md`.

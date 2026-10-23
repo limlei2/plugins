@@ -1,6 +1,6 @@
 ---
 name: brainstorm
-description: "Pipeline stage 1: interviews you one question at a time (open questions and playback first, recommended answers for the details), writes design.md, has a fresh agent check it for gaps, and waits for your go before planning. Runs after /simply:start; hands off to /simply:plan."
+description: "Pipeline stage 1: interviews you in rounds of up to 4 multiple-choice questions (the big picture and playback first, then the details), each with a recommended answer, writes design.md, has a fresh agent check it for gaps, and waits for your go before planning. Runs after /simply:start; hands off to /simply:plan."
 disable-model-invocation: true
 ---
 
@@ -20,7 +20,7 @@ Find out what the user actually wants and why, then pin down the details: one go
 
 | Limit | Value | Why |
 | --- | --- | --- |
-| Questions per message | 1 during the interview; the builder check's leftovers go in 1 batched message | One question gets a considered answer; a list gets skimmed. The leftovers come after the interview, when batching saves a round each. |
+| Questions per round | 1-4, in one `AskUserQuestion` call; 2-4 options each, your pick first | 4 is the tool's maximum; cards the user flips through cost one round trip instead of one per question. |
 | Playback chunk | 200 words max, one part at a time | Long enough to describe one part, short enough that the user reads it and corrects it. |
 | Interview length | Until every open branch is answered, or the user replies **skip** | The user, not a count, decides when they've said enough; **skip** hands every remaining branch to you. |
 | `/simply:research` calls | 1, for one "which library or approach" question | Research is the most expensive step here; one question that needs outside facts is the most a design should hang on. |
@@ -44,13 +44,13 @@ Read the files the task names and the files they import, plus the project's `CLA
 
 ## Step 3. Interview
 
-One question per message, then wait for the reply (rule: `rule-ask-with-context`). The first message is two lines: "I'll ask one question at a time; reply **skip** whenever you want me to decide the rest." and the opening question.
+Ask in rounds: one `AskUserQuestion` call per round with 1-4 questions, then wait for the answers (rule: `rule-ask-with-context`, which has the card format and the fallback when the tool is missing). Before the first round, write one line: "I'll ask in rounds of up to 4; type **skip** in any Other box to let me decide the rest."
 
-**Open: get them describing.** The opening question asks for a concrete picture in the user's own words, with no example answers: "Walk me through the last time you wished `<the thing>` existed", "What would make you wince if I got this wrong?" Ask open questions while the broad branches are unsettled: who it's for and why now, what success looks like, what it must not do, what they've seen elsewhere. Their words carry intent your options can't; offer options only when they're stuck or say "what do you think?", and then propose one concrete answer. Skip the opening when the task already says what the user sees and why.
+**Round 1: the big picture.** Who it's for and why now, what success looks like, what it must not do. Each card offers your 2-4 best concrete guesses from the task and the code; the Other box takes their own words, and an Other answer outranks your guesses. Skip any the task already answers.
 
-**Play back as you go.** As soon as you understand one part well enough to describe it (what it's for and who it serves, or how one piece behaves), send that part back in at most 200 words, mark each guess `(my guess)`, and end with "What's wrong or missing?" as that message's question. Then the next branch. Playback and questions alternate until every part has been played back once.
+**Play back as you go.** Once you understand a part (what it's for, or how one piece behaves), write it back above the next round's cards in at most 200 words, marking each guess `(my guess)`, and make that round's first card "Is this playback right?" with options `Yes (Recommended)` and `Partly` (an Other or `Partly` answer: ask what's off in the next round). Every part is played back once.
 
-**Narrow branches: recommend.** Once the broad picture is played back and confirmed, ask the narrow branches, covered only where this task leaves them open:
+**Later rounds: the details.** Once the picture is confirmed, ask the narrow branches this task leaves open:
 
 - edge cases and error behavior: empty, invalid, duplicate, concurrent, missing input;
 - data, API, or file shape, and what happens to existing data;
@@ -58,19 +58,13 @@ One question per message, then wait for the reply (rule: `rule-ask-with-context`
 - how to prove it works: which tests, which surface (browser, curl, CLI);
 - which library or approach, when there is a real choice.
 
-Each narrow question has this shape, so "yes" is a full reply:
+Put the code's evidence in the question as `(found: <file>:<line> <what it says>)`, and say why your pick wins in its option description. A question whose options depend on another answer waits for the next round.
 
-```markdown
-**Found:** <what the code says, with file:line, 1-2 lines>
-**Question:** <one sentence>
-**My answer:** <the answer you'd pick> — <one-line why>
-```
+**Every question.** First check whether the code, `CLAUDE.md`, or `git log` answers it; if so, don't ask: record a Decision tagged `(code: <file>:<line>)`. A choice a sensible builder would settle without changing what gets built: decide it, tag it `(my call)`, don't ask (rule: `rule-decide-and-report`). After each round, record each answer as a Decision tagged `(you)` and follow any new branch it opens. An answer that contradicts an earlier one or the code: say which, and ask which wins.
 
-**Every question.** First check whether the code, `CLAUDE.md`, or `git log` answers it; if so, don't ask: record a Decision tagged `(code: <file>:<line>)`. A choice a sensible builder would settle without changing what gets built: decide it, tag it `(my call)`, don't ask (rule: `rule-decide-and-report`). After each reply, record the Decision tagged `(you)` and follow any new branch it opens. An answer that contradicts an earlier one or the code: say which, and ask which wins.
+**Ending.** Stop when every open branch has a Decision. On **skip** in any answer (the other answers in that round still count): decide every remaining branch, tag each `(my call)`, and go to Step 4. A task that already says not to ask ("don't ask me", "just decide", "skip the questions") counts as **skip** before the first round; record that with `run_state.py log <run> "brainstorm: user opted out of questions"`. A task with nothing open gets no questions: say so.
 
-**Ending.** Stop when every open branch has a Decision. On **skip**: decide every remaining branch, tag each `(my call)`, and go to Step 4. A task that already says not to ask ("don't ask me", "just decide", "skip the questions") counts as **skip** before the opening question; record that with `run_state.py log <run> "brainstorm: user opted out of questions"`. A task with nothing open gets no questions: say so.
-
-A branch that needs outside facts to choose a library or approach: read `${CLAUDE_PLUGIN_ROOT}/skills/research/SKILL.md` and follow it in its From-brainstorm mode for that one question (no clarifying question, 20-fetch budget), then put its pick to the user as a narrow question. A second such branch stays in Open questions.
+A branch that needs outside facts to choose a library or approach: read `${CLAUDE_PLUGIN_ROOT}/skills/research/SKILL.md` and follow it in its From-brainstorm mode for that one question (no clarifying question, 20-fetch budget), then put its pick to the user as a card in the next round. A second such branch stays in Open questions.
 
 ## Step 4. Write `<run>/design.md`
 
@@ -110,7 +104,7 @@ Over 60 lines: cut detail that belongs in a brief. Fix and re-run until both hol
 
 Spawn one agent with the values and prompt in `${CLAUDE_PLUGIN_ROOT}/skills/brainstorm/references/builder-check.md`, resolving the plugin root and both paths to absolute ones. Tell the user first, in one line, that a fresh reader is checking the design and you may come back once with a few questions. Sort every question it returns into the Answered, Minor, and Theirs piles that file defines, and update `design.md`.
 
-Theirs pile not empty: send the one batched round in that file's format and wait. Write each answer into `design.md` as a Decision tagged `(you)`, then re-run Step 5. An opted-out run asks nothing: decide the Theirs pile too, tagged `(my call)`. If it replied `nothing important left`, say so in the Output.
+Theirs pile not empty: ask them in that file's format and wait. Write each answer into `design.md` as a Decision tagged `(you)`, then re-run Step 5. An opted-out run asks nothing: decide the Theirs pile too, tagged `(my call)`. If it replied `nothing important left`, say so in the Output.
 
 ## Output
 
@@ -131,5 +125,5 @@ Theirs pile not empty: send the one batched round in that file's format and wait
 
 - Never write task briefs, branches, or code here: briefs need a settled design, and code needs briefs.
 - Never leave a Decision without its why and its tag: plan can't tell a choice from an accident without the why, and the user can't tell what they agreed to without the tag.
-- Never ask a question the code answers, and never send two questions in one message before the builder check's batched round.
+- Never ask a question the code answers, never ask more than 4 per round, and never ask one per message when the next doesn't depend on its answer.
 - Never give the builder agent the interview: it must read `design.md` as plan will, with nothing else.

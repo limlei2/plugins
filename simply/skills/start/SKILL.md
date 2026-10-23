@@ -59,7 +59,7 @@ run_state.py check <run>
 One short block, nothing else:
 - **Run:** the `<run>` path.
 - **Mode:** `auto` or `prompt`.
-- **Next:** brainstorm interviews you one question at a time (reply **skip** to let it decide the rest), writes `design.md`, and waits for your go; then plan asks about its open choices the same way, writes the task briefs, and asks you to choose tdd or subagents, then the tasks run and get reviewed before any PR opens.
+- **Next:** brainstorm interviews you in rounds of up to 4 multiple-choice questions (type **skip** in any Other box to let it decide the rest), writes `design.md`, and waits for your go; then plan asks about its open choices the same way, writes the task briefs, and asks you to choose tdd or subagents, then the tasks run and get reviewed before any PR opens.
 - Prompt mode only: "I'll pause after each stage and wait for your **go**."
 
 ## Hand-off

@@ -1,26 +1,30 @@
 ---
 name: rule-ask-with-context
-description: "Apply when a skill must ask the user or escalate. Interviews ask one question per message with what you found and your recommended answer; escalations say what is unresolved, what was tried, and one question, batched in one message."
+description: "Apply when a skill must ask the user or escalate. Interviews send rounds of up to 4 multiple-choice questions with your pick first; escalations say what is unresolved, what was tried, and one question, batched in one message."
 disable-model-invocation: true
 ---
 
 # Ask With Context
 
-When you must stop for the user, the message must be answerable without scrolling back. There are two kinds. An **interview** (designing or planning) asks one question per message, because each answer changes what the next question should be: open questions first so the user describes intent in their own words, then narrow ones with what you found and the answer you'd pick. An **escalation** (work is stuck) names what is unresolved and what you tried, batches every question into one message, and waits.
+When you must stop for the user, the message must be answerable without scrolling back. There are two kinds. An **interview** (designing or planning) sends rounds of multiple-choice questions the user can flip through and answer in one go: each question carries what you found and the options, your pick first. The next round follows from the answers. An **escalation** (work is stuck) names what is unresolved and what you tried, batches every question into one message, and waits.
 
-**Why:** A vague "how should I proceed?" costs the user a round of re-reading the session. In an interview, a list of questions gets skimmed and answered without thought; in an escalation, questions sent one at a time cost a round each.
+**Why:** A vague "how should I proceed?" costs the user a round of re-reading the session. Questions sent one per message cost a round trip each; a wall of prose questions gets skimmed. Cards with concrete options get answered quickly and accurately.
 
 **Do:**
 - Ask only what `rule-decide-and-report` cannot decide: a product or preference choice, a wait point, an irreversible action, or a hit limit.
-- Interview, broad branches (who, why, success, what it must not do): an open question with no example answers, and a short playback of each part once you understand it.
-- Interview, narrow branches (edge cases, data shape, how to prove it): **Found** (what the code says, with file:line), **Question** (one sentence), **My answer** (your pick and why). Check the code first; never ask what it answers. Stop when the user replies **skip**, and decide the rest.
+- Interview round: one `AskUserQuestion` call with 1-4 questions (its maximum). Each question: `question` is one sentence, plus `(found: <file>:<line> <what it says>)` when the code bears on it; `header` is a 12-character-max label; 2-4 `options`, each a concrete answer with a one-line `description` of what it means; your pick is the first option, its label ending ` (Recommended)`. `multiSelect: true` only when the answers really combine. The user's own words go through the tool's built-in Other box, so never add an "Other" option.
+- Batch only questions that don't depend on each other: if one answer changes another question's options, ask it in the next round.
+- Broad branches (who, why, success, what it must not do) get cards too: offer your 2-4 best concrete guesses, and read an Other answer as the user's intent in their own words. Play back what you understood as text above the next round's cards.
+- Never ask what the code answers. Stop when the user types **skip** in any Other box, and decide the rest.
+- No `AskUserQuestion` tool in this session: send the same round as one message, numbered, each question with lettered options and your pick marked `(recommended)`, so "1a 2b 3a" is a full reply.
 - Escalation: **Unresolved** (the exact criterion, check, or error text), **Tried** (one line per attempt), **Question** (one, answerable in a word or a choice). Collect all questions first, send them in one message, and wait.
-- On every narrow question and every escalation, offer the answer you'd pick, so "yes" is a valid reply.
+- On every question, offer the answer you'd pick, so accepting the defaults is a valid reply.
 
 **Not this:**
 - "What do you want me to do?"
-- An escalation split across three messages, or an interview message with three questions.
-- An escalation with no error text or attempts listed.
+- One question per message when the next question doesn't depend on its answer.
+- Open-ended prose questions with no options.
+- An escalation split across three messages, or one with no error text or attempts listed.
 - Asking a question already answered in the brief's Constraints or the handoff's Decisions.
 
-**In simply:** `/simply:brainstorm` and `/simply:plan` interview one question at a time, and brainstorm batches its builder check's leftover questions into one message; a `/simply:tdd` report's Escalation (Unresolved, Tried, Question); `/simply:review` escalates after loop 2 and sends product questions to the user; `/simply:goodnight` asks once for all missing `next` fields.
+**In simply:** `/simply:brainstorm` and `/simply:plan` interview in rounds of up to 4 cards, and brainstorm sends its builder check's leftovers the same way; a `/simply:tdd` report's Escalation (Unresolved, Tried, Question); `/simply:review` escalates after loop 2 and sends product questions to the user; `/simply:goodnight` asks once for all missing `next` fields.

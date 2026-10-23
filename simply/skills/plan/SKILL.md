@@ -1,6 +1,6 @@
 ---
 name: plan
-description: "Pipeline stage 2: questions you one at a time on the plan's open choices, turns design.md into 1-10 checked task briefs, and asks you to run them with /simply:tdd or /simply:subagents; after a review asking for changes, writes only the fix tasks."
+description: "Pipeline stage 2: asks you multiple-choice rounds on the plan's open choices, turns design.md into 1-10 checked task briefs, and asks you to run them with /simply:tdd or /simply:subagents; after a review asking for changes, writes only the fix tasks."
 disable-model-invocation: true
 ---
 
@@ -32,7 +32,7 @@ Hard limits. Never exceed them, even if the design implies more.
 | Tasks per first plan | 1 min, 10 max | Tasks of one tdd run land in order on one branch, so more of them cost time, not review load; past 10, split the request across runs. |
 | Tasks in subagents mode | 2 min, 5 max | One task doesn't need parallel worktrees; more workers mean more merge conflicts. |
 | Criteria per brief | 7 max | More than 7 means more than one task; cheap executors lose track of long criteria lists. |
-| Questions per message | 1, with your recommended answer; first plan only, a loop plan asks nothing | One question gets a considered answer; a loop's findings are already exact. |
+| Questions per round | 1-4 in one `AskUserQuestion` call, your pick first; first plan only, a loop plan asks nothing | 4 is the tool's maximum; a loop's findings are already exact. |
 | Interview length | Until every open plan choice is answered, or the user replies **skip**; the tdd-or-subagents question is always asked | Brainstorm settled what to build; this settles how it splits, which the user may see differently. |
 | Fix tasks per loop | 1 per branch with findings | Two fix tasks on one branch would collide; the findings for a branch belong in one brief. |
 
@@ -51,14 +51,14 @@ Read `<run>/design.md`, then the files its Approach names and the files they imp
 
 A task with more than 7 criteria is too big: split it, or cut criteria that restate another.
 
-Then question the user on the plan's open choices, one question per message in brainstorm's shape (**Found** / **Question** / **My answer**), waiting for each reply (rule: `rule-ask-with-context`). Ask only what `design.md` doesn't settle and would change the briefs:
+Then ask the user about the plan's open choices in rounds of 1-4 cards, one `AskUserQuestion` call per round with your pick as each card's first option, waiting for each round's answers (rule: `rule-ask-with-context`). Ask only what `design.md` doesn't settle and would change the briefs:
 
 - where to split, and in what order the tasks land;
 - an interface's name or shape, when more than one would be reasonable;
 - what proves each task: which test command, which surface;
 - a task whose estimate is far larger than the others: split it, or keep it whole.
 
-Never re-ask a Decision in `design.md`. Choices that don't change the briefs: decide and record in Constraints (rule: `rule-decide-and-report`). Record each answer in the Constraints of the briefs it touches. On **skip**, or when the run log shows the user opted out of brainstorm's questions, decide the rest yourself. Nothing open: no questions; say so. The tdd-or-subagents question is still asked.
+Never re-ask a Decision in `design.md`. Choices that don't change the briefs: decide and record in Constraints (rule: `rule-decide-and-report`). Record each answer in the Constraints of the briefs it touches. On **skip** in any answer, or when the run log shows the user opted out of brainstorm's questions, decide the rest yourself. Nothing open: no questions; say so. The tdd-or-subagents question is still asked.
 
 ## Step 2. Write and check the briefs (first plan)
 
@@ -77,7 +77,7 @@ Fix every error it reports and re-run until it exits 0 (it then prints `ok: <n> 
 
 ## Step 3. Ask how to execute (first plan, every run, both modes)
 
-With 2+ tasks, first run `check_briefs.py --parallel <run>/tasks/*.md`, so the user learns what subagents would cost before choosing, not after. Show the checkpoint and a table `task | goal | Work-in files | estimate`. Then ask, and wait for the answer even in auto mode:
+With 2+ tasks, first run `check_briefs.py --parallel <run>/tasks/*.md`, so the user learns what subagents would cost before choosing, not after. Show the checkpoint and a table `task | goal | Work-in files | estimate`. Then ask with one `AskUserQuestion` card (options `tdd` and `subagents`, the recommended one first with ` (Recommended)` and the reason below as its description), and wait for the answer even in auto mode. Above the card, write:
 
 > I recommend **<choice>**: <one-line reason from the table below>. The other option: **<other>**, <its one-line cost for this plan>. TDD is one agent, tasks in order, one branch, one PR; subagents is one worker per task in parallel worktrees, one PR per task.
 

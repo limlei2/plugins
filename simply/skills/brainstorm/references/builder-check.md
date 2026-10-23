@@ -34,4 +34,4 @@ Every question goes in exactly one pile:
 | Minor | A sensible builder could settle it without changing what gets built | Decide it, add a Decision tagged `(my call)` |
 | Theirs | Only the user can answer it, and the answer changes what gets built | Ask it in the one batched round |
 
-The batched round is one message, numbered, most important first, each item as **Question** / **My answer** so "yes to all" is a full reply. It is the only time brainstorm sends more than one question at once: the interview is over, and these are the leftovers a fresh reader found.
+Ask the Theirs pile as interview cards (format in `rule-ask-with-context`), most important first, 4 per `AskUserQuestion` call: up to 7 questions is 2 calls, the second sent right after the first is answered. Your pick is each card's first option, so accepting every default is a full reply. This is one round of questions, not a new interview: a follow-up an answer raises goes in Open questions.

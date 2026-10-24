@@ -38,7 +38,7 @@ Rules: `rules` is an index (the only skill without `disable-model-invocation`, s
 
 ## File contracts
 
-Three formats are each defined once and shared by a writer, a reader, and a checker that both sides run:
+Four formats are each defined once and shared by a writer, a reader, and a checker that both sides run:
 
 | Format | Defined in | Writer | Reader | Checker |
 | --- | --- | --- | --- | --- |
@@ -100,7 +100,7 @@ Try skills that touch git (`start` and the pipeline, `cleanup`, `give`, `take`, 
 - **Change a limit or model:** see Sync points.
 - **Add a plugin:** `<plugin>/.claude-plugin/plugin.json`, `<plugin>/skills/`, an entry in `.claude-plugin/marketplace.json`, a row in the root `README.md`.
 - **Version:** bump the minor `version` in `simply/.claude-plugin/plugin.json` when skill behaviour changes; doc-only edits leave it.
-- **Commits:** history so far is short lowercase messages directly on `main`. The Conventional Commits and PR flow inside `tdd` and `review` is for the projects it runs in, not this repo.
+- **Commits:** short lowercase messages, usually directly on `main`; larger changes also land as PRs. The Conventional Commits and PR flow inside `tdd` and `review` is for the projects it runs in, not this repo.
 
 ## Don't
 
